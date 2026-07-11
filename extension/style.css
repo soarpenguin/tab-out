@@ -99,16 +99,149 @@ header .time {
   opacity: 0.5;
 }
 
+/* ---- Workspace bar ---- */
+.workspace-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 10px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.workspace-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+  color: var(--muted);
+  user-select: none;
+}
+
+.workspace-tab:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.workspace-tab.active {
+  background: rgba(200, 113, 58, 0.08);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  font-weight: 500;
+}
+
+.workspace-tab .ws-icon {
+  font-size: 12px;
+}
+
+.workspace-tab .ws-count {
+  font-size: 10px;
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.workspace-tab.active .ws-count {
+  background: rgba(200, 113, 58, 0.15);
+  color: var(--accent-amber);
+}
+
+.workspace-add {
+  width: 28px;
+  height: 28px;
+  border: 1.5px dashed var(--warm-gray);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.workspace-add:hover {
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+  background: rgba(200, 113, 58, 0.08);
+}
+
+/* Drag and drop styles */
+.domain-card,
+.page-chip {
+  cursor: grab;
+}
+
+.domain-card:active,
+.page-chip:active {
+  cursor: grabbing;
+}
+
+.domain-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+.page-chip.dragging {
+  opacity: 0.5;
+}
+
+.workspace-tab.drag-over {
+  background: rgba(200, 113, 58, 0.15) !important;
+  border-color: var(--accent-amber) !important;
+  transform: scale(1.05);
+}
+
+.ws-delete {
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: rgba(0,0,0,0.06);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+  padding: 0;
+  margin-left: 2px;
+}
+
+.workspace-tab:hover .ws-delete {
+  opacity: 1;
+}
+
+.ws-delete:hover {
+  background: rgba(220, 50, 50, 0.12) !important;
+  color: #dc3232 !important;
+}
+
 /* ---- Tab cleanup banner ---- */
 .tab-cleanup-banner {
   background: linear-gradient(135deg, rgba(200, 113, 58, 0.04), rgba(200, 113, 58, 0.09));
   border: 1px solid rgba(200, 113, 58, 0.18);
   border-radius: 8px;
-  padding: 16px 24px;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin: 0 0 16px 0;
 }
 
 .tab-cleanup-left {

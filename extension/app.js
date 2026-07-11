@@ -315,6 +315,9 @@ function showCustomPrompt(options) {
     titleEl.textContent = options.title || 'Prompt';
     labelEl.textContent = options.label || 'Enter:';
     inputEl.value = options.value || options.defaultValue || '';
+    labelEl.style.display = '';
+    inputEl.style.display = '';
+    confirmBtn.textContent = options.confirmText || 'OK';
 
     const close = () => {
       modal.style.display = 'none';
@@ -366,6 +369,80 @@ function showCustomPrompt(options) {
     modal.style.display = 'flex';
     document.addEventListener('keydown', handleKeydown);
     inputEl.focus();
+  });
+}
+
+function showCustomConfirm(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const titleEl = document.getElementById('modalTitle');
+    const labelEl = document.getElementById('modalLabel');
+    const inputEl = document.getElementById('modalInput');
+    const cancelBtn = document.getElementById('modalCancel');
+    const confirmBtn = document.getElementById('modalConfirm');
+    const closeBtn = document.getElementById('modalClose');
+
+    if (currentPromptKeydownHandler) {
+      document.removeEventListener('keydown', currentPromptKeydownHandler);
+      currentPromptKeydownHandler = null;
+    }
+
+    titleEl.textContent = options.title || 'Confirm';
+    labelEl.textContent = options.message || 'Are you sure?';
+    labelEl.style.display = 'block';
+    inputEl.style.display = 'none';
+    confirmBtn.textContent = options.confirmText || 'Confirm';
+
+    const close = () => {
+      modal.style.display = 'none';
+      if (currentPromptKeydownHandler) {
+        document.removeEventListener('keydown', currentPromptKeydownHandler);
+        currentPromptKeydownHandler = null;
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+        resolve(false);
+      } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        close();
+        resolve(true);
+      }
+    };
+
+    currentPromptKeydownHandler = handleKeydown;
+
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(false);
+    };
+
+    confirmBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(true);
+    };
+
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(false);
+    };
+
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        close();
+        resolve(false);
+      }
+    };
+
+    modal.style.display = 'flex';
+    document.addEventListener('keydown', handleKeydown);
+    confirmBtn.focus();
   });
 }
 
@@ -429,8 +506,8 @@ function renderQuickLinks() {
       const escapedHostname = escapeHtml(hostname || link.url);
       return `
         <div class="quick-link-item" data-action="open-quick-link" data-link-url="${safeUrl}" title="${escapedTitle}">
-          <div class="quick-link-initial">${initial}</div>
-          ${faviconUrl ? `<img class="quick-link-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+          <div class="quick-link-initial" data-initial-for="${escapedHostname}">${initial}</div>
+          ${faviconUrl ? `<img class="quick-link-favicon" src="${faviconUrl}" alt="" data-hostname="${escapedHostname}">` : ''}
           <button class="quick-link-menu" data-action="edit-quick-link" data-link-id="${link.id}" data-link-url="${safeUrl}" data-link-title="${escapeHtml(link.title || hostname || link.url)}">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
@@ -1035,8 +1112,8 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
     const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
+      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <span class="tab-age${ageClass}">${ageInfo.text}</span>
       <div class="chip-actions">
@@ -1129,8 +1206,8 @@ function renderDomainCard(group) {
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
     const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
-      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
+      ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       <span class="tab-age${ageClass}">${ageInfo.text}</span>
       <div class="chip-actions">
@@ -1159,7 +1236,7 @@ function renderDomainCard(group) {
   }
 
   return `
-    <div class="mission-card domain-card ${hasDupes ? 'has-amber-bar' : 'has-neutral-bar'}" data-domain-id="${stableId}">
+    <div class="mission-card domain-card ${hasDupes ? 'has-amber-bar' : 'has-neutral-bar'}" data-domain-id="${stableId}" draggable="true" data-drag-domain="${group.domain}">
       <div class="status-bar"></div>
       <div class="mission-content">
         <div class="mission-top">
@@ -1256,7 +1333,7 @@ function renderDeferredItem(item) {
       <input type="checkbox" class="deferred-checkbox" data-action="check-deferred" data-deferred-id="${item.id}">
       <div class="deferred-info">
         <a href="${item.url}" target="_blank" rel="noopener" class="deferred-title" title="${(item.title || '').replace(/"/g, '&quot;')}">
-          <img src="${faviconUrl}" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px" onerror="this.style.display='none'">${item.title || item.url}
+          <img src="${faviconUrl}" alt="" class="deferred-favicon" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px">${item.title || item.url}
         </a>
         <div class="deferred-meta">
           <span>${domain}</span>
@@ -1430,15 +1507,23 @@ async function renderStaticDashboard() {
     return b.tabs.length - a.tabs.length;
   });
 
+  // --- Filter by current workspace ---
+  domainGroups = filterDomainGroupsByWorkspace(domainGroups, currentWorkspaceId);
+
+  // --- Render workspace bar ---
+  renderWorkspaceBar();
+
   // --- Render domain cards ---
   const openTabsSection      = document.getElementById('openTabsSection');
   const openTabsMissionsEl   = document.getElementById('openTabsMissions');
   const openTabsSectionCount = document.getElementById('openTabsSectionCount');
   const openTabsSectionTitle = document.getElementById('openTabsSectionTitle');
 
+  const workspaceTabCount = domainGroups.reduce((sum, g) => sum + g.tabs.length, 0);
+
   if (domainGroups.length > 0 && openTabsSection) {
     if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
-    openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+    openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${workspaceTabCount} tabs</button>`;
     openTabsMissionsEl.innerHTML = domainGroups.map(g => renderDomainCard(g)).join('');
     openTabsSection.style.display = 'block';
   } else if (openTabsSection) {
@@ -2061,9 +2146,362 @@ document.addEventListener('keydown', (e) => {
 
 
 /* ----------------------------------------------------------------
+   WORKSPACES — tab grouping and filtering
+   ---------------------------------------------------------------- */
+
+const DEFAULT_WORKSPACES = [
+  {
+    id: 'all',
+    name: 'All',
+    icon: '🌐',
+    patterns: [],
+    isPreset: true,
+  },
+  {
+    id: 'development',
+    name: 'Development',
+    icon: '💻',
+    patterns: [
+      'github.com', 'gitlab.com', 'stackoverflow.com', 'developer.mozilla.org',
+      'localhost', '127.0.0.1', 'codepen.io', 'codesandbox.io',
+      'dev.to', 'medium.com', 'hashnode.dev', 'gitee.com',
+    ],
+    isPreset: true,
+  },
+  {
+    id: 'ai-tools',
+    name: 'AI Tools',
+    icon: '🤖',
+    patterns: [
+      'chat.openai.com', 'chatgpt.com', 'claude.ai', 'anthropic.com',
+      'gemini.google.com', 'bard.google.com', 'perplexity.ai',
+      'deepseek.com', 'chat.deepseek.com', 'platform.deepseek.com',
+      'poe.com', 'cursor.sh', 'github.com/copilot',
+    ],
+    isPreset: true,
+  },
+  {
+    id: 'documentation',
+    name: 'Documentation',
+    icon: '📚',
+    patterns: [
+      'docs.', 'developers.', 'developer.', 'documentation.',
+      'api.', 'doc.','readthedocs.io', 'mdn.',
+      'developers.weixin.qq.com', 'react.dev', 'vuejs.org',
+      'nodejs.org', 'python.org', 'rust-lang.org',
+      'pkg.go.dev', 'golang.org',
+    ],
+    isPreset: true,
+  },
+  {
+    id: 'reading',
+    name: 'Reading',
+    icon: '📖',
+    patterns: [
+      'medium.com', 'juejin.cn', 'zhihu.com', 'reddit.com',
+      'news.ycombinator.com', 'hackernoon.com', 'dev.to',
+      'blog.', 'article.', 'substack.com',
+    ],
+    isPreset: true,
+  },
+];
+
+let workspaces = [];
+let currentWorkspaceId = 'all';
+
+async function loadWorkspaces() {
+  try {
+    const result = await chrome.storage.local.get(['workspaces', 'currentWorkspaceId']);
+    if (result.workspaces && Array.isArray(result.workspaces) && result.workspaces.length > 0) {
+      workspaces = result.workspaces;
+    } else {
+      workspaces = [...DEFAULT_WORKSPACES];
+      await chrome.storage.local.set({ workspaces });
+    }
+    if (result.currentWorkspaceId) {
+      currentWorkspaceId = result.currentWorkspaceId;
+    }
+  } catch (err) {
+    console.warn('[tab-out] Failed to load workspaces:', err);
+    workspaces = [...DEFAULT_WORKSPACES];
+  }
+}
+
+async function saveWorkspaces() {
+  try {
+    await chrome.storage.local.set({ workspaces, currentWorkspaceId });
+  } catch (err) {
+    console.warn('[tab-out] Failed to save workspaces:', err);
+  }
+}
+
+function tabMatchesWorkspace(tab, workspace) {
+  if (workspace.id === 'all') {
+    return true;
+  }
+  if (!workspace.patterns || workspace.patterns.length === 0) {
+    return false;
+  }
+  let hostname = '';
+  try {
+    hostname = new URL(tab.url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return workspace.patterns.some(pattern => {
+    const p = pattern.toLowerCase();
+    if (p.startsWith('.') || p.endsWith('.') || p.includes('.')) {
+      return hostname === p || hostname.endsWith('.' + p) || hostname.includes(p);
+    }
+    return hostname.includes(p);
+  });
+}
+
+function countTabsInWorkspace(workspace) {
+  if (workspace.id === 'all') return openTabs.filter(t => !t.isTabOut).length;
+  return openTabs.filter(t => !t.isTabOut && tabMatchesWorkspace(t, workspace)).length;
+}
+
+function filterDomainGroupsByWorkspace(groups, workspaceId) {
+  const workspace = workspaces.find(w => w.id === workspaceId);
+  if (!workspace || workspace.id === 'all') return groups;
+
+  return groups
+    .map(group => {
+      const filteredTabs = group.tabs.filter(tab => tabMatchesWorkspace(tab, workspace));
+      if (filteredTabs.length === 0) return null;
+      return { ...group, tabs: filteredTabs };
+    })
+    .filter(Boolean);
+}
+
+function renderWorkspaceBar() {
+  const bar = document.getElementById('workspaceBar');
+  if (!bar) return;
+
+  const tabsHtml = workspaces.map(ws => {
+    const count = countTabsInWorkspace(ws);
+    const isActive = ws.id === currentWorkspaceId;
+    const canDelete = ws.id !== 'all';
+    const deleteBtn = canDelete
+      ? `<button class="ws-delete" data-action="delete-workspace" data-workspace-id="${ws.id}" title="Delete workspace">
+           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+         </button>`
+      : '';
+    return `
+      <div class="workspace-tab ${isActive ? 'active' : ''}" data-workspace-id="${ws.id}" data-action="switch-workspace">
+        <span class="ws-icon">${ws.icon}</span>
+        <span>${ws.name}</span>
+        <span class="ws-count">${count}</span>
+        ${deleteBtn}
+      </div>`;
+  }).join('');
+
+  bar.innerHTML = `
+    ${tabsHtml}
+    <div class="workspace-add" data-action="add-workspace" title="New workspace">+</div>
+  `;
+}
+
+function switchWorkspace(workspaceId) {
+  currentWorkspaceId = workspaceId;
+  saveWorkspaces();
+  renderWorkspaceBar();
+  renderDashboard();
+}
+
+async function addWorkspace(name) {
+  if (!name || !name.trim()) return;
+  const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (!id) return;
+  if (workspaces.some(w => w.id === id)) {
+    showToast('Workspace already exists');
+    return;
+  }
+  const newWs = {
+    id,
+    name: name.trim(),
+    icon: '📁',
+    patterns: [],
+    isPreset: false,
+  };
+  workspaces.push(newWs);
+  await saveWorkspaces();
+  renderWorkspaceBar();
+  showToast(`Created workspace "${name.trim()}"`);
+}
+
+// Event delegation for workspace bar
+document.addEventListener('click', async (e) => {
+  const deleteBtn = e.target.closest('[data-action="delete-workspace"]');
+  if (deleteBtn) {
+    e.stopPropagation();
+    const id = deleteBtn.dataset.workspaceId;
+    if (id) await deleteWorkspace(id);
+    return;
+  }
+
+  const wsTab = e.target.closest('[data-action="switch-workspace"]');
+  if (wsTab) {
+    const id = wsTab.dataset.workspaceId;
+    if (id) switchWorkspace(id);
+    return;
+  }
+
+  const addBtn = e.target.closest('[data-action="add-workspace"]');
+  if (addBtn) {
+    const name = await showCustomPrompt({
+      title: 'New Workspace',
+      label: 'Workspace name:',
+      defaultValue: '',
+    });
+    if (name) {
+      await addWorkspace(name);
+    }
+    return;
+  }
+});
+
+// Delete workspace
+async function deleteWorkspace(id) {
+  const ws = workspaces.find(w => w.id === id);
+  if (!ws || id === 'all') return;
+
+  const confirmed = await showCustomConfirm({
+    title: 'Delete Workspace',
+    message: `Delete workspace "${ws.name}"? This cannot be undone.`,
+    confirmText: 'Delete',
+  });
+  if (!confirmed) return;
+
+  workspaces = workspaces.filter(w => w.id !== id);
+  if (currentWorkspaceId === id) {
+    currentWorkspaceId = 'all';
+  }
+  await saveWorkspaces();
+  renderWorkspaceBar();
+  renderDashboard();
+  showToast(`Deleted workspace "${ws.name}"`);
+}
+
+// Right-click to delete workspaces (except All)
+document.addEventListener('contextmenu', async (e) => {
+  const wsTab = e.target.closest('[data-action="switch-workspace"]');
+  if (!wsTab) return;
+  const id = wsTab.dataset.workspaceId;
+  if (!id || id === 'all') return;
+
+  e.preventDefault();
+  await deleteWorkspace(id);
+});
+
+// Drag and drop — add domains to workspaces
+let draggedDomain = null;
+
+document.addEventListener('dragstart', (e) => {
+  const target = e.target.closest('[data-drag-domain]');
+  if (!target) return;
+  draggedDomain = target.dataset.dragDomain;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', draggedDomain);
+  }
+  target.classList.add('dragging');
+});
+
+document.addEventListener('dragend', (e) => {
+  const target = e.target.closest('[data-drag-domain]');
+  if (target) target.classList.remove('dragging');
+  draggedDomain = null;
+  document.querySelectorAll('.workspace-tab.drag-over').forEach(el => el.classList.remove('drag-over'));
+});
+
+document.addEventListener('dragover', (e) => {
+  const wsTab = e.target.closest('.workspace-tab[data-workspace-id]');
+  if (!wsTab) {
+    document.querySelectorAll('.workspace-tab.drag-over').forEach(el => el.classList.remove('drag-over'));
+    return;
+  }
+  const wsId = wsTab.dataset.workspaceId;
+  if (wsId === 'all') return;
+
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  document.querySelectorAll('.workspace-tab.drag-over').forEach(el => {
+    if (el !== wsTab) el.classList.remove('drag-over');
+  });
+  wsTab.classList.add('drag-over');
+});
+
+document.addEventListener('dragleave', (e) => {
+  const wsTab = e.target.closest('.workspace-tab');
+  if (wsTab && !wsTab.contains(e.relatedTarget)) {
+    wsTab.classList.remove('drag-over');
+  }
+});
+
+document.addEventListener('drop', async (e) => {
+  const wsTab = e.target.closest('.workspace-tab[data-workspace-id]');
+  if (!wsTab) return;
+
+  const wsId = wsTab.dataset.workspaceId;
+  if (wsId === 'all') return;
+
+  e.preventDefault();
+  wsTab.classList.remove('drag-over');
+
+  let domain = draggedDomain;
+  if (!domain && e.dataTransfer) {
+    domain = e.dataTransfer.getData('text/plain');
+  }
+  if (!domain) return;
+
+  const ws = workspaces.find(w => w.id === wsId);
+  if (!ws) return;
+
+  if (!ws.patterns) ws.patterns = [];
+  if (ws.patterns.includes(domain)) {
+    showToast(`"${domain}" already in ${ws.name}`);
+    return;
+  }
+
+  ws.patterns.push(domain);
+  await saveWorkspaces();
+  renderWorkspaceBar();
+  renderDashboard();
+  showToast(`Added "${domain}" to ${ws.name}`);
+});
+
+// Global favicon image load/error handlers (CSP-safe, no inline events)
+document.addEventListener('error', (e) => {
+  const target = e.target;
+  if (target && target.tagName === 'IMG') {
+    if (target.classList.contains('chip-favicon') ||
+        target.classList.contains('quick-link-favicon') ||
+        target.classList.contains('deferred-favicon')) {
+      target.style.display = 'none';
+    }
+  }
+}, true);
+
+document.addEventListener('load', (e) => {
+  const target = e.target;
+  if (target && target.tagName === 'IMG' && target.classList.contains('quick-link-favicon')) {
+    const initial = target.previousElementSibling;
+    if (initial && initial.classList.contains('quick-link-initial')) {
+      initial.style.display = 'none';
+    }
+  }
+}, true);
+
+
+/* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
-renderDashboard();
+(async function init() {
+  await loadWorkspaces();
+  await renderDashboard();
+})();
 
 setInterval(() => {
   const timeEl = document.getElementById('timeDisplay');
