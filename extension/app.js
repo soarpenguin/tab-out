@@ -284,6 +284,224 @@ async function dismissSavedTab(id) {
 }
 
 
+function escapeHtml(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+let currentPromptKeydownHandler = null;
+
+function showCustomPrompt(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const titleEl = document.getElementById('modalTitle');
+    const labelEl = document.getElementById('modalLabel');
+    const inputEl = document.getElementById('modalInput');
+    const cancelBtn = document.getElementById('modalCancel');
+    const confirmBtn = document.getElementById('modalConfirm');
+    const closeBtn = document.getElementById('modalClose');
+
+    if (currentPromptKeydownHandler) {
+      document.removeEventListener('keydown', currentPromptKeydownHandler);
+      currentPromptKeydownHandler = null;
+    }
+
+    titleEl.textContent = options.title || 'Prompt';
+    labelEl.textContent = options.label || 'Enter:';
+    inputEl.value = options.value || options.defaultValue || '';
+
+    const close = () => {
+      modal.style.display = 'none';
+      if (currentPromptKeydownHandler) {
+        document.removeEventListener('keydown', currentPromptKeydownHandler);
+        currentPromptKeydownHandler = null;
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+        resolve(null);
+      } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        close();
+        resolve(inputEl.value.trim() || null);
+      }
+    };
+
+    currentPromptKeydownHandler = handleKeydown;
+
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(null);
+    };
+
+    confirmBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(inputEl.value.trim() || null);
+    };
+
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(null);
+    };
+
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        close();
+        resolve(null);
+      }
+    };
+
+    modal.style.display = 'flex';
+    document.addEventListener('keydown', handleKeydown);
+    inputEl.focus();
+  });
+}
+
+/* ----------------------------------------------------------------
+   QUICK LINKS — chrome.storage.local
+   ---------------------------------------------------------------- */
+
+async function getQuickLinks() {
+  const { quickLinks = [] } = await chrome.storage.local.get('quickLinks');
+  return quickLinks;
+}
+
+async function saveQuickLink(link) {
+  const { quickLinks = [] } = await chrome.storage.local.get('quickLinks');
+  quickLinks.push({
+    id:    Date.now().toString(),
+    title: link.title || '',
+    url:   link.url || '',
+    savedAt: new Date().toISOString(),
+  });
+  await chrome.storage.local.set({ quickLinks });
+}
+
+async function deleteQuickLink(id) {
+  const { quickLinks = [] } = await chrome.storage.local.get('quickLinks');
+  const filtered = quickLinks.filter(l => l.id !== id);
+  await chrome.storage.local.set({ quickLinks: filtered });
+}
+
+async function updateQuickLink(id, updates) {
+  const { quickLinks = [] } = await chrome.storage.local.get('quickLinks');
+  const updated = quickLinks.map(l => l.id === id ? { ...l, ...updates } : l);
+  await chrome.storage.local.set({ quickLinks: updated });
+}
+
+function renderQuickLinks() {
+  getQuickLinks().then(links => {
+    const listEl = document.getElementById('quickLinksList');
+    const emptyEl = document.getElementById('quickLinksEmpty');
+    if (!listEl || !emptyEl) return;
+
+    if (links.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    listEl.innerHTML = links.map(link => {
+      let hostname = '';
+      let faviconUrl = '';
+      let initial = '';
+      try {
+        const urlObj = new URL(link.url);
+        hostname = urlObj.hostname.replace(/^www\./, '');
+        faviconUrl = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
+        initial = hostname.charAt(0).toUpperCase();
+      } catch {}
+      const safeUrl = (link.url || '').replace(/"/g, '&quot;');
+      const escapedTitle = escapeHtml(link.title || hostname || link.url);
+      const escapedHostname = escapeHtml(hostname || link.url);
+      return `
+        <div class="quick-link-item" data-action="open-quick-link" data-link-url="${safeUrl}" title="${escapedTitle}">
+          <div class="quick-link-initial">${initial}</div>
+          ${faviconUrl ? `<img class="quick-link-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+          <button class="quick-link-menu" data-action="edit-quick-link" data-link-id="${link.id}" data-link-url="${safeUrl}" data-link-title="${escapeHtml(link.title || hostname || link.url)}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+        </div>`;
+    }).join('');
+  });
+}
+
+/* ----------------------------------------------------------------
+   TODO LIST — chrome.storage.local
+   ---------------------------------------------------------------- */
+
+async function getTodos() {
+  const { todos = [] } = await chrome.storage.local.get('todos');
+  return todos;
+}
+
+async function saveTodo(text) {
+  const { todos = [] } = await chrome.storage.local.get('todos');
+  todos.push({
+    id:        Date.now().toString(),
+    text:      text,
+    completed: false,
+    savedAt:   new Date().toISOString(),
+  });
+  await chrome.storage.local.set({ todos });
+}
+
+async function deleteTodo(id) {
+  const { todos = [] } = await chrome.storage.local.get('todos');
+  const filtered = todos.filter(t => t.id !== id);
+  await chrome.storage.local.set({ todos: filtered });
+}
+
+async function toggleTodo(id) {
+  const { todos = [] } = await chrome.storage.local.get('todos');
+  const todo = todos.find(t => t.id === id);
+  if (todo) {
+    todo.completed = !todo.completed;
+    todo.completedAt = todo.completed ? new Date().toISOString() : null;
+    await chrome.storage.local.set({ todos });
+  }
+}
+
+function renderTodos() {
+  getTodos().then(todos => {
+    const listEl = document.getElementById('todoList');
+    const emptyEl = document.getElementById('todoEmpty');
+    if (!listEl || !emptyEl) return;
+
+    if (todos.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.style.display = 'block';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    listEl.innerHTML = todos.map(todo => {
+      const escapedText = escapeHtml(todo.text);
+      return `
+        <div class="todo-item ${todo.completed ? 'completed' : ''}" data-todo-id="${todo.id}">
+          <input type="checkbox" class="todo-checkbox" data-action="toggle-todo" data-todo-id="${todo.id}" ${todo.completed ? 'checked' : ''}>
+          <span class="todo-text">${escapedText}</span>
+          <button class="todo-delete" data-action="delete-todo" data-todo-id="${todo.id}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+          </button>
+        </div>`;
+    }).join('');
+  });
+}
+
+
 /* ----------------------------------------------------------------
    UI HELPERS
    ---------------------------------------------------------------- */
@@ -510,6 +728,18 @@ function getDateDisplay() {
     year:    'numeric',
     month:   'long',
     day:     'numeric',
+  });
+}
+
+/**
+ * getTimeDisplay() — "14:30:45"
+ */
+function getTimeDisplay() {
+  return new Date().toLocaleTimeString('en-US', {
+    hour:   'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
   });
 }
 
@@ -1022,9 +1252,15 @@ function renderArchiveItem(item) {
 async function renderStaticDashboard() {
   // --- Header ---
   const greetingEl = document.getElementById('greeting');
+  const timeEl     = document.getElementById('timeDisplay');
   const dateEl     = document.getElementById('dateDisplay');
   if (greetingEl) greetingEl.textContent = getGreeting();
+  if (timeEl)     timeEl.textContent     = getTimeDisplay();
   if (dateEl)     dateEl.textContent     = getDateDisplay();
+
+  // --- Quick Links & Todo ---
+  renderQuickLinks();
+  renderTodos();
 
   // --- Fetch tabs ---
   await fetchOpenTabs();
@@ -1227,7 +1463,6 @@ document.addEventListener('click', async (e) => {
     const tabUrl = actionEl.dataset.tabUrl;
     if (!tabUrl) return;
 
-    // Close the tab in Chrome directly
     const allTabs = await chrome.tabs.query({});
     const match   = allTabs.find(t => t.url === tabUrl);
     if (match) await chrome.tabs.remove(match.id);
@@ -1235,7 +1470,6 @@ document.addEventListener('click', async (e) => {
 
     playCloseSound();
 
-    // Animate the chip row out
     const chip = actionEl.closest('.page-chip');
     if (chip) {
       const rect = chip.getBoundingClientRect();
@@ -1245,18 +1479,26 @@ document.addEventListener('click', async (e) => {
       chip.style.transform  = 'scale(0.8)';
       setTimeout(() => {
         chip.remove();
-        // If the card now has no tabs, remove it too
         const parentCard = document.querySelector('.mission-card:has(.mission-pages:empty)');
         if (parentCard) animateCardOut(parentCard);
         document.querySelectorAll('.mission-card').forEach(c => {
-          if (c.querySelectorAll('.page-chip[data-action="focus-tab"]').length === 0) {
+          const remaining = c.querySelectorAll('.page-chip[data-action="focus-tab"]').length;
+          if (remaining === 0) {
             animateCardOut(c);
+          } else {
+            const badge = c.querySelector('.open-tabs-badge');
+            if (badge) {
+              badge.innerHTML = `${ICONS.tabs} ${remaining} tab${remaining !== 1 ? 's' : ''} open`;
+            }
+            const closeBtn = c.querySelector('.action-btn.close-tabs');
+            if (closeBtn) {
+              closeBtn.innerHTML = `${ICONS.close} Close all ${remaining} tab${remaining !== 1 ? 's' : ''}`;
+            }
           }
         });
       }, 200);
     }
 
-    // Update footer
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
 
@@ -1271,7 +1513,6 @@ document.addEventListener('click', async (e) => {
     const tabTitle = actionEl.dataset.tabTitle || tabUrl;
     if (!tabUrl) return;
 
-    // Save to chrome.storage.local
     try {
       await saveTabForLater({ url: tabUrl, title: tabTitle });
     } catch (err) {
@@ -1280,20 +1521,38 @@ document.addEventListener('click', async (e) => {
       return;
     }
 
-    // Close the tab in Chrome
     const allTabs = await chrome.tabs.query({});
     const match   = allTabs.find(t => t.url === tabUrl);
     if (match) await chrome.tabs.remove(match.id);
     await fetchOpenTabs();
 
-    // Animate chip out
     const chip = actionEl.closest('.page-chip');
     if (chip) {
       chip.style.transition = 'opacity 0.2s, transform 0.2s';
       chip.style.opacity    = '0';
       chip.style.transform  = 'scale(0.8)';
-      setTimeout(() => chip.remove(), 200);
+      setTimeout(() => {
+        chip.remove();
+        document.querySelectorAll('.mission-card').forEach(c => {
+          const remaining = c.querySelectorAll('.page-chip[data-action="focus-tab"]').length;
+          if (remaining === 0) {
+            animateCardOut(c);
+          } else {
+            const badge = c.querySelector('.open-tabs-badge');
+            if (badge) {
+              badge.innerHTML = `${ICONS.tabs} ${remaining} tab${remaining !== 1 ? 's' : ''} open`;
+            }
+            const closeBtn = c.querySelector('.action-btn.close-tabs');
+            if (closeBtn) {
+              closeBtn.innerHTML = `${ICONS.close} Close all ${remaining} tab${remaining !== 1 ? 's' : ''}`;
+            }
+          }
+        });
+      }, 200);
     }
+
+    const statTabs = document.getElementById('statTabs');
+    if (statTabs) statTabs.textContent = openTabs.length;
 
     showToast('Saved for later');
     await renderDeferredColumn();
@@ -1359,12 +1618,13 @@ document.addEventListener('click', async (e) => {
       await closeTabsByUrls(urls);
     }
 
+    await fetchOpenTabs();
+
     if (card) {
       playCloseSound();
       animateCardOut(card);
     }
 
-    // Remove from in-memory groups
     const idx = domainGroups.indexOf(group);
     if (idx !== -1) domainGroups.splice(idx, 1);
 
@@ -1373,6 +1633,11 @@ document.addEventListener('click', async (e) => {
 
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
+
+    const openTabsSectionCount = document.getElementById('openTabsSectionCount');
+    if (openTabsSectionCount) {
+      openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${openTabs.length} tabs</button>`;
+    }
     return;
   }
 
@@ -1385,12 +1650,10 @@ document.addEventListener('click', async (e) => {
     await closeDuplicateTabs(urls, true);
     playCloseSound();
 
-    // Hide the dedup button
     actionEl.style.transition = 'opacity 0.2s';
     actionEl.style.opacity    = '0';
     setTimeout(() => actionEl.remove(), 200);
 
-    // Remove dupe badges from the card
     if (card) {
       card.querySelectorAll('.chip-dupe-badge').forEach(b => {
         b.style.transition = 'opacity 0.2s';
@@ -1408,6 +1671,14 @@ document.addEventListener('click', async (e) => {
       card.classList.add('has-neutral-bar');
     }
 
+    const statTabs = document.getElementById('statTabs');
+    if (statTabs) statTabs.textContent = openTabs.length;
+
+    const openTabsSectionCount = document.getElementById('openTabsSectionCount');
+    if (openTabsSectionCount) {
+      openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${openTabs.length} tabs</button>`;
+    }
+
     showToast('Closed duplicates, kept one copy each');
     return;
   }
@@ -1418,6 +1689,7 @@ document.addEventListener('click', async (e) => {
       .filter(t => t.url && !t.url.startsWith('chrome') && !t.url.startsWith('about:'))
       .map(t => t.url);
     await closeTabsByUrls(allUrls);
+    await fetchOpenTabs();
     playCloseSound();
 
     document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
@@ -1428,7 +1700,127 @@ document.addEventListener('click', async (e) => {
       animateCardOut(c);
     });
 
+    const statTabs = document.getElementById('statTabs');
+    if (statTabs) statTabs.textContent = openTabs.length;
+
+    const openTabsSectionCount = document.getElementById('openTabsSectionCount');
+    if (openTabsSectionCount) {
+      openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${openTabs.length} tabs</button>`;
+    }
+
     showToast('All tabs closed. Fresh start.');
+    return;
+  }
+
+  // ---- Open quick link ----
+  if (action === 'open-quick-link') {
+    let url = actionEl.dataset.linkUrl;
+    if (!url) return;
+    if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url)) {
+      url = 'https://' + url;
+    }
+    chrome.tabs.create({ url });
+    return;
+  }
+
+  // ---- Add quick link ----
+  if (action === 'add-quick-link') {
+    const url = await showCustomPrompt({
+      title: 'Add Quick Link',
+      label: 'Enter URL:'
+    });
+    if (!url) return;
+    let formattedUrl = url;
+    if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+    const title = await showCustomPrompt({
+      title: 'Add Quick Link',
+      label: 'Enter title (optional):'
+    });
+    await saveQuickLink({ url: formattedUrl, title: title || '' });
+    renderQuickLinks();
+    showToast('Quick link added');
+    return;
+  }
+
+  // ---- Open context menu for quick link ----
+  if (action === 'edit-quick-link') {
+    e.stopPropagation();
+    const menu = document.getElementById('linkContextMenu');
+    const id = actionEl.dataset.linkId;
+    const currentUrl = actionEl.dataset.linkUrl;
+    const currentTitle = actionEl.dataset.linkTitle;
+    if (!id || !menu) return;
+
+    const rect = actionEl.getBoundingClientRect();
+    const menuWidth = 120;
+    const menuHeight = 60;
+
+    let left = rect.left + rect.width / 2 - menuWidth / 2;
+    let top = rect.top + rect.height + 8;
+
+    if (left < 0) left = 8;
+    if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 8;
+    if (top + menuHeight > window.innerHeight) top = rect.top - menuHeight - 8;
+
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.display = 'block';
+
+    menu.dataset.linkId = id;
+    menu.dataset.linkUrl = currentUrl;
+    menu.dataset.linkTitle = currentTitle;
+
+    const closeMenu = (ev) => {
+      if (!menu.contains(ev.target)) {
+        menu.style.display = 'none';
+        document.removeEventListener('click', closeMenu);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 0);
+    return;
+  }
+
+  // ---- Delete quick link ----
+  if (action === 'delete-quick-link') {
+    e.stopPropagation();
+    const id = actionEl.dataset.linkId;
+    if (!id) return;
+    await deleteQuickLink(id);
+    renderQuickLinks();
+    return;
+  }
+
+  // ---- Add todo ----
+  if (action === 'add-todo') {
+    const text = await showCustomPrompt({
+      title: 'Add Todo',
+      label: 'Enter task:'
+    });
+    if (!text) return;
+    await saveTodo(text);
+    renderTodos();
+    showToast('Todo added');
+    return;
+  }
+
+  // ---- Toggle todo ----
+  if (action === 'toggle-todo') {
+    const id = actionEl.dataset.todoId;
+    if (!id) return;
+    await toggleTodo(id);
+    renderTodos();
+    return;
+  }
+
+  // ---- Delete todo ----
+  if (action === 'delete-todo') {
+    e.stopPropagation();
+    const id = actionEl.dataset.todoId;
+    if (!id) return;
+    await deleteTodo(id);
+    renderTodos();
     return;
   }
 });
@@ -1442,6 +1834,66 @@ document.addEventListener('click', (e) => {
   const body = document.getElementById('archiveBody');
   if (body) {
     body.style.display = body.style.display === 'none' ? 'block' : 'none';
+  }
+});
+
+// ---- Context menu actions for quick links ----
+const closeLinkContextMenu = () => {
+  const menu = document.getElementById('linkContextMenu');
+  if (menu) menu.style.display = 'none';
+};
+
+window.addEventListener('scroll', closeLinkContextMenu);
+window.addEventListener('resize', closeLinkContextMenu);
+
+document.addEventListener('click', async (e) => {
+  const menuItem = e.target.closest('.link-menu-item');
+  if (!menuItem) return;
+
+  const menu = document.getElementById('linkContextMenu');
+  if (!menu) return;
+
+  const menuAction = menuItem.dataset.menuAction;
+  const id = menu.dataset.linkId;
+  const currentUrl = menu.dataset.linkUrl;
+  const currentTitle = menu.dataset.linkTitle;
+
+  menu.style.display = 'none';
+
+  if (menuAction === 'edit') {
+    if (!id) return;
+
+    const newUrl = await showCustomPrompt({
+      title: 'Edit Quick Link',
+      label: 'URL:',
+      defaultValue: currentUrl
+    });
+    if (newUrl === null) return;
+    if (!newUrl.trim()) {
+      showToast('URL cannot be empty');
+      return;
+    }
+
+    let formattedUrl = newUrl.trim();
+    if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(formattedUrl)) {
+      formattedUrl = 'https://' + formattedUrl;
+    }
+
+    const newTitle = await showCustomPrompt({
+      title: 'Edit Quick Link',
+      label: 'Title (optional):',
+      defaultValue: currentTitle
+    });
+    if (newTitle === null) return;
+
+    await updateQuickLink(id, { url: formattedUrl, title: newTitle || '' });
+    renderQuickLinks();
+    showToast('Quick link updated');
+  } else if (menuAction === 'delete') {
+    if (!id) return;
+    await deleteQuickLink(id);
+    renderQuickLinks();
+    showToast('Quick link deleted');
   }
 });
 
@@ -1480,3 +1932,14 @@ document.addEventListener('input', async (e) => {
    INITIALIZE
    ---------------------------------------------------------------- */
 renderDashboard();
+
+setInterval(() => {
+  const timeEl = document.getElementById('timeDisplay');
+  if (timeEl) timeEl.textContent = getTimeDisplay();
+}, 1000);
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local') return;
+  if (changes.quickLinks) renderQuickLinks();
+  if (changes.todos) renderTodos();
+});
