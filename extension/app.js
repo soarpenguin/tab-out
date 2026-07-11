@@ -40,11 +40,12 @@ async function fetchOpenTabs() {
 
     const tabs = await chrome.tabs.query({});
     openTabs = tabs.map(t => ({
-      id:       t.id,
-      url:      t.url,
-      title:    t.title,
-      windowId: t.windowId,
-      active:   t.active,
+      id:           t.id,
+      url:          t.url,
+      title:        t.title,
+      windowId:     t.windowId,
+      active:       t.active,
+      lastAccessed: t.lastAccessed || Date.now(),
       // Flag Tab Out's own pages so we can detect duplicate new tabs
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));
@@ -984,6 +985,40 @@ function checkTabOutDupes() {
 
 
 /* ----------------------------------------------------------------
+   TAB AGE — calculate and format how long a tab has been open
+   ---------------------------------------------------------------- */
+
+function getTabAgeInfo(lastAccessed) {
+  const now = Date.now();
+  const diffMs = now - lastAccessed;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  let text = '';
+  let level = 'fresh'; // fresh, warn, danger
+
+  if (diffMins < 1) {
+    text = 'just now';
+  } else if (diffMins < 60) {
+    text = `${diffMins}m`;
+  } else if (diffHours < 24) {
+    text = `${diffHours}h`;
+  } else {
+    text = `${diffDays}d`;
+  }
+
+  if (diffDays >= 2) {
+    level = 'danger';
+  } else if (diffDays >= 1) {
+    level = 'warn';
+  }
+
+  return { text, level, diffMs, diffHours, diffDays };
+}
+
+
+/* ----------------------------------------------------------------
    OVERFLOW CHIPS ("+N more" expand button in domain cards)
    ---------------------------------------------------------------- */
 
@@ -998,9 +1033,12 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
+    const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
+    const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
+      <span class="tab-age${ageClass}">${ageInfo.text}</span>
       <div class="chip-actions">
         <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
@@ -1043,6 +1081,16 @@ function renderDomainCard(group) {
   const hasDupes   = dupeUrls.length > 0;
   const totalExtras = dupeUrls.reduce((s, [, c]) => s + c - 1, 0);
 
+  // Find oldest tab age
+  let oldestTs = Date.now();
+  for (const tab of tabs) {
+    if (tab.lastAccessed && tab.lastAccessed < oldestTs) oldestTs = tab.lastAccessed;
+  }
+  const oldestAge = getTabAgeInfo(oldestTs);
+  const oldestBadge = oldestAge.level !== 'fresh'
+    ? `<span class="oldest-badge oldest-${oldestAge.level}">· oldest ${oldestAge.text}</span>`
+    : '';
+
   const tabBadge = `<span class="open-tabs-badge">
     ${ICONS.tabs}
     ${tabCount} tab${tabCount !== 1 ? 's' : ''} open
@@ -1079,9 +1127,12 @@ function renderDomainCard(group) {
     let domain = '';
     try { domain = new URL(tab.url).hostname; } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
+    const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
+    const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
+      <span class="tab-age${ageClass}">${ageInfo.text}</span>
       <div class="chip-actions">
         <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>
@@ -1114,6 +1165,7 @@ function renderDomainCard(group) {
         <div class="mission-top">
           <span class="mission-name">${isLanding ? 'Homepages' : (group.label || friendlyDomain(group.domain))}</span>
           ${tabBadge}
+          ${oldestBadge}
           ${dupeBadge}
         </div>
         <div class="mission-pages">${pageChips}</div>
@@ -1924,6 +1976,86 @@ document.addEventListener('input', async (e) => {
       || '<div style="font-size:12px;color:var(--muted);padding:8px 0">No results</div>';
   } catch (err) {
     console.warn('[tab-out] Archive search failed:', err);
+  }
+});
+
+
+/* ----------------------------------------------------------------
+   GLOBAL SEARCH — filter tabs in real-time
+   ---------------------------------------------------------------- */
+
+function filterTabs(query) {
+  const q = query.toLowerCase().trim();
+  const cards = document.querySelectorAll('#openTabsMissions .mission-card');
+
+  cards.forEach(card => {
+    const chips = card.querySelectorAll('.page-chip[data-action="focus-tab"]');
+    let hasMatch = false;
+
+    chips.forEach(chip => {
+      const title = chip.querySelector('.chip-text')?.textContent?.toLowerCase() || '';
+      const url = chip.dataset.tabUrl?.toLowerCase() || '';
+      const match = !q || title.includes(q) || url.includes(q);
+      chip.style.display = match ? '' : 'none';
+      if (match) hasMatch = true;
+    });
+
+    const overflowChip = card.querySelector('.page-chip-overflow');
+    if (overflowChip) {
+      const overflowContainer = card.querySelector('.page-chips-overflow');
+      if (q) {
+        overflowChip.style.display = 'none';
+        if (overflowContainer) {
+          const overflowChips = overflowContainer.querySelectorAll('.page-chip[data-action="focus-tab"]');
+          let overflowHasMatch = false;
+          overflowChips.forEach(chip => {
+            const title = chip.querySelector('.chip-text')?.textContent?.toLowerCase() || '';
+            const url = chip.dataset.tabUrl?.toLowerCase() || '';
+            const match = title.includes(q) || url.includes(q);
+            chip.style.display = match ? '' : 'none';
+            if (match) {
+              overflowHasMatch = true;
+              hasMatch = true;
+            }
+          });
+          overflowContainer.style.display = overflowHasMatch ? '' : 'none';
+        }
+      } else {
+        overflowChip.style.display = '';
+        if (overflowContainer) overflowContainer.style.display = 'none';
+      }
+    }
+
+    card.style.display = (hasMatch || !q) ? '' : 'none';
+  });
+}
+
+function focusSearch() {
+  const input = document.getElementById('searchInput');
+  if (input) {
+    input.focus();
+    input.select();
+  }
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'searchInput') {
+    filterTabs(e.target.value);
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    focusSearch();
+  }
+  if (e.key === 'Escape') {
+    const input = document.getElementById('searchInput');
+    if (input && document.activeElement === input) {
+      input.value = '';
+      filterTabs('');
+      input.blur();
+    }
   }
 });
 
