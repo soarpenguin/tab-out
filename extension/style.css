@@ -58,11 +58,17 @@ body::before {
 /* ---- Header ---- */
 header {
   display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 48px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--warm-gray);
+}
+
+.header-top {
+  display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 48px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--warm-gray);
 }
 
 header .time {
@@ -104,11 +110,7 @@ header .time {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
-  padding: 8px 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--warm-gray);
-  border-radius: 10px;
+  padding: 0;
   overflow-x: auto;
   scrollbar-width: thin;
 }

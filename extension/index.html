@@ -20,14 +20,20 @@
        HEADER — greeting on the left
        ================================================================ -->
   <header>
-    <div class="header-left">
-      <!-- "Good afternoon" — written by getGreeting() in app.js -->
-      <h1 id="greeting"></h1>
-      <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
-      <div class="date" id="dateDisplay"></div>
+    <div class="header-top">
+      <div class="header-left">
+        <!-- "Good afternoon" — written by getGreeting() in app.js -->
+        <h1 id="greeting"></h1>
+        <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
+        <div class="date" id="dateDisplay"></div>
+      </div>
+      <!-- "14:30:45" — written by getTimeDisplay() in app.js, updates every second -->
+      <div class="time" id="timeDisplay"></div>
     </div>
-    <!-- "14:30:45" — written by getTimeDisplay() in app.js, updates every second -->
-    <div class="time" id="timeDisplay"></div>
+    <!-- WORKSPACE BAR — in header, above bottom border -->
+    <div class="workspace-bar" id="workspaceBar">
+      <!-- Workspace tabs injected by app.js -->
+    </div>
   </header>
 
   <!-- ================================================================
@@ -36,10 +42,6 @@
        Right: saved for later checklist
        The right column only renders when it has items (JS controls this)
        ================================================================ -->
-  <!-- WORKSPACE BAR — above quick links -->
-  <div class="workspace-bar" id="workspaceBar">
-    <!-- Workspace tabs injected by app.js -->
-  </div>
 
   <!-- QUICK LINKS AND TODO — two side-by-side cards above open tabs -->
   <div class="quick-todo-row">
