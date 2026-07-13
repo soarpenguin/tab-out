@@ -99,20 +99,32 @@ Once the extension is loaded:
 
 ## Project Architecture
 
-Tab Out is a Chrome Manifest V3 extension with a simple, flat file structure:
+Tab Out is a Chrome Manifest V3 extension with a modular file structure:
 
 ```
 tab-out/
 ├── extension/
 │   ├── icons/           # Extension icons (16px, 48px, 128px, SVG)
-│   ├── app.js           # Main dashboard logic (the "brain")
+│   ├── js/              # JavaScript modules
+│   │   ├── core/        # Core utilities (Chrome API, storage)
+│   │   ├── ui/          # UI utilities (helpers, icons, domain cleanup)
+│   │   ├── renderer/    # Rendering logic (dashboard, cards, deferred list)
+│   │   ├── features/    # Feature modules (search, workspaces, sessions, settings)
+│   │   ├── events/      # Event handlers (main handlers, toolbar events)
+│   │   └── init.js      # Application entry point
+│   ├── css/             # CSS modules
+│   │   ├── base/        # Variables and reset styles
+│   │   ├── layout/      # Layout styles (header, footer, columns)
+│   │   ├── components/  # Component styles (cards, chips, links, etc.)
+│   │   ├── ui/          # UI element styles (modal, drawer, toast, etc.)
+│   │   └── animations.css # Animation definitions
 │   ├── background.js    # Service worker for toolbar badge updates
 │   ├── index.html       # New tab page template
-│   ├── style.css        # All styling (no CSS frameworks)
 │   ├── manifest.json    # Extension configuration
 │   └── config.local.js  # Optional personal overrides (gitignored)
 ├── .gitignore
 ├── AGENTS.md            # This file
+├── CLAUDE.md            # Symlink to AGENTS.md
 ├── LICENSE
 └── README.md
 ```
@@ -121,56 +133,31 @@ tab-out/
 
 | File | Purpose |
 |------|---------|
-| `app.js` | Core dashboard logic: tab fetching, domain grouping, rendering, event handling, saved tabs |
-| `background.js` | Service worker that updates the toolbar badge with tab count (green/amber/red based on count) |
-| `index.html` | New tab page DOM structure — header, banner, two-column layout (open tabs + saved for later), footer |
-| `style.css` | All visual styling — responsive grid, colors, animations, confetti |
-| `manifest.json` | Chrome extension manifest (V3) — permissions, URL override, background service worker |
-| `config.local.js` | Optional personal configuration (gitignored) for custom landing page patterns and domain groups |
-
----
-
-## Code Structure in app.js
-
-`app.js` is organized into clearly marked sections:
-
-1. **CHROME TABS API** — Direct access to `chrome.tabs`:
-   - `fetchOpenTabs()` — Reads all open tabs
-   - `closeTabsByUrls()` — Closes tabs by hostname
-   - `closeTabsExact()` — Closes tabs by exact URL (for landing pages)
-   - `focusTab()` — Switches to a specific tab
-   - `closeDuplicateTabs()` — Handles duplicate tab cleanup
-
-2. **SAVED FOR LATER** — `chrome.storage.local` operations:
-   - `saveTabForLater()` — Saves a tab to the deferred list
-   - `getSavedTabs()` — Retrieves active and archived saved tabs
-   - `checkOffSavedTab()` — Marks a saved tab as completed (moves to archive)
-   - `dismissSavedTab()` — Removes a saved tab entirely
-
-3. **UI HELPERS** — Visual effects:
-   - `playCloseSound()` — Web Audio API synthesized swoosh
-   - `shootConfetti()` — CSS + JS confetti particles
-   - `animateCardOut()` — Card close animation
-   - `showToast()` — Pop-up notifications
-   - `checkAndShowEmptyState()` — "Inbox zero" message
-
-4. **DOMAIN & TITLE CLEANUP** — Friendly names and title parsing:
-   - `FRIENDLY_DOMAINS` — Map of hostname → display name (GitHub, YouTube, etc.)
-   - `friendlyDomain()` — Converts hostname to readable name
-   - `smartTitle()` — Extracts meaningful titles from URLs (GitHub repos, X posts, etc.)
-   - `cleanTitle()` — Removes domain suffixes from page titles
-
-5. **DOMAIN CARD RENDERER** — Builds HTML for domain groups:
-   - `renderDomainCard()` — Generates the card for one domain group
-   - Handles duplicates, overflow chips (`+N more`), and action buttons
-
-6. **MAIN DASHBOARD RENDERER** — Assembles everything:
-   - `renderStaticDashboard()` — Main entry point: greeting, tab fetching, grouping, rendering
-   - Landing pages detection and priority sorting
-   - Custom group rules from `config.local.js`
-
-7. **EVENT HANDLERS** — Event delegation for all clicks:
-   - Focus tab, close tab, save for later, close duplicates, close all, etc.
+| `js/core/chrome-api.js` | Chrome Tabs API wrappers: fetchOpenTabs, closeTabs, focusTab |
+| `js/core/storage.js` | chrome.storage.local operations for saved tabs, quick links, todos |
+| `js/ui/helpers.js` | UI utilities: playCloseSound, shootConfetti, showToast, modals |
+| `js/ui/icons.js` | SVG icon definitions |
+| `js/ui/domain-cleanup.js` | Friendly domain names, title parsing |
+| `js/ui/tab-age.js` | Tab age calculation and formatting |
+| `js/renderer/domain-cards.js` | Domain card rendering logic |
+| `js/renderer/deferred-list.js` | Saved tabs and quick links rendering |
+| `js/renderer/dashboard.js` | Main dashboard assembly and rendering |
+| `js/features/search.js` | Global search functionality |
+| `js/features/workspaces.js` | Workspace management and filtering |
+| `js/features/sessions.js` | Session save/restore functionality |
+| `js/features/settings.js` | Settings panel and configuration |
+| `js/events/handlers.js` | Main event handlers for all clicks |
+| `js/events/toolbar-events.js` | Bottom toolbar event handlers |
+| `js/init.js` | Application initialization |
+| `css/base/variables.css` | CSS variables (colors, theme) |
+| `css/base/reset.css` | Global reset styles and container layout |
+| `css/layout/*.css` | Layout styles (header, footer, columns) |
+| `css/components/*.css` | Component-specific styles |
+| `css/ui/*.css` | UI element styles |
+| `background.js` | Service worker that updates the toolbar badge |
+| `index.html` | New tab page DOM structure |
+| `manifest.json` | Chrome extension manifest (V3) |
+| `config.local.js` | Optional personal configuration (gitignored) |
 
 ---
 
@@ -204,7 +191,7 @@ Chrome doesn't automatically pick up changes to unpacked extensions. To see your
 
 ### Adding a Friendly Domain Name
 
-Edit the `FRIENDLY_DOMAINS` map in `app.js`:
+Edit the `FRIENDLY_DOMAINS` map in `js/ui/domain-cleanup.js`:
 
 ```javascript
 const FRIENDLY_DOMAINS = {
@@ -215,10 +202,10 @@ const FRIENDLY_DOMAINS = {
 
 ### Adding a Landing Page Pattern
 
-Edit the `LANDING_PAGE_PATTERNS` array in `app.js`, or add to `config.local.js`:
+Edit the `LANDING_PAGE_PATTERNS` array in `js/renderer/dashboard.js`, or add to `config.local.js`:
 
 ```javascript
-// In app.js
+// In js/renderer/dashboard.js
 const LANDING_PAGE_PATTERNS = [
   // ... existing patterns
   { hostname: 'example.com', pathExact: ['/'] },
@@ -251,17 +238,18 @@ const LOCAL_CUSTOM_GROUPS = [
 
 ### Modifying Colors/Theme
 
-Colors are defined in CSS variables at the top of `style.css`:
+Colors are defined in CSS variables in `css/base/variables.css`:
 
 ```css
 :root {
-  --bg: #f8f7f4;
-  --card-bg: #ffffff;
-  --text: #2a2724;
-  --muted: #8a847d;
+  --ink: #1a1613;
+  --paper: #f8f5f0;
+  --warm-gray: #e8e2da;
+  --muted: #9a918a;
   --accent-amber: #c8713a;
   --accent-sage: #5a7a62;
   --accent-slate: #5a6b7a;
+  --accent-rose: #b35a5a;
 }
 ```
 
@@ -275,3 +263,4 @@ Colors are defined in CSS variables at the top of `style.css`:
 - **No external API calls**: The only external request is Google's favicon service (`www.google.com/s2/favicons`)
 - **All data local**: `chrome.storage.local` for saved tabs, no server required
 - **No persistent background page**: `background.js` is a service worker that wakes up on events
+- **Document synchronization**: When code structure changes (new files, renamed modules, moved functions), update `AGENTS.md` and `CLAUDE.md` to reflect the new structure so the AI agent has accurate context
