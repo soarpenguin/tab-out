@@ -296,6 +296,7 @@ function escapeHtml(text) {
 }
 
 let currentPromptKeydownHandler = null;
+let currentLinkMenuCloseHandler = null;
 
 function showCustomPrompt(options) {
   return new Promise((resolve) => {
@@ -509,7 +510,7 @@ function renderQuickLinks() {
           <div class="quick-link-initial" data-initial-for="${escapedHostname}">${initial}</div>
           ${faviconUrl ? `<img class="quick-link-favicon" src="${faviconUrl}" alt="" data-hostname="${escapedHostname}">` : ''}
           <button class="quick-link-menu" data-action="edit-quick-link" data-link-id="${link.id}" data-link-url="${safeUrl}" data-link-title="${escapeHtml(link.title || hostname || link.url)}">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="18" r="2"/></svg>
           </button>
         </div>`;
     }).join('');
@@ -1108,7 +1109,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const safeUrl   = (tab.url || '').replace(/"/g, '&quot;');
     const safeTitle = label.replace(/"/g, '&quot;');
     let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
+    try { domain = new URL(tab.url).hostname.replace(/^www\./, ''); } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
     const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
@@ -1202,7 +1203,7 @@ function renderDomainCard(group) {
     const safeUrl   = (tab.url || '').replace(/"/g, '&quot;');
     const safeTitle = label.replace(/"/g, '&quot;');
     let domain = '';
-    try { domain = new URL(tab.url).hostname; } catch {}
+    try { domain = new URL(tab.url).hostname.replace(/^www\./, ''); } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
     const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
@@ -1561,6 +1562,12 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
+  // ---- Close drag hint overlay ----
+  if (action === 'close-drag-hint') {
+    await markDragHintSeen();
+    return;
+  }
+
   // ---- Close duplicate Tab Out tabs ----
   if (action === 'close-tabout-dupes') {
     await closeTabOutDupes();
@@ -1890,6 +1897,11 @@ document.addEventListener('click', async (e) => {
     const currentTitle = actionEl.dataset.linkTitle;
     if (!id || !menu) return;
 
+    if (currentLinkMenuCloseHandler) {
+      document.removeEventListener('click', currentLinkMenuCloseHandler);
+      currentLinkMenuCloseHandler = null;
+    }
+
     const rect = actionEl.getBoundingClientRect();
     const menuWidth = 120;
     const menuHeight = 60;
@@ -1910,11 +1922,11 @@ document.addEventListener('click', async (e) => {
     menu.dataset.linkTitle = currentTitle;
 
     const closeMenu = (ev) => {
-      if (!menu.contains(ev.target)) {
-        menu.style.display = 'none';
-        document.removeEventListener('click', closeMenu);
-      }
+      menu.style.display = 'none';
+      document.removeEventListener('click', closeMenu);
+      currentLinkMenuCloseHandler = null;
     };
+    currentLinkMenuCloseHandler = closeMenu;
     setTimeout(() => document.addEventListener('click', closeMenu), 0);
     return;
   }
@@ -1978,6 +1990,10 @@ document.addEventListener('click', (e) => {
 const closeLinkContextMenu = () => {
   const menu = document.getElementById('linkContextMenu');
   if (menu) menu.style.display = 'none';
+  if (currentLinkMenuCloseHandler) {
+    document.removeEventListener('click', currentLinkMenuCloseHandler);
+    currentLinkMenuCloseHandler = null;
+  }
 };
 
 window.addEventListener('scroll', closeLinkContextMenu);
@@ -1989,6 +2005,11 @@ document.addEventListener('click', async (e) => {
 
   const menu = document.getElementById('linkContextMenu');
   if (!menu) return;
+
+  if (currentLinkMenuCloseHandler) {
+    document.removeEventListener('click', currentLinkMenuCloseHandler);
+    currentLinkMenuCloseHandler = null;
+  }
 
   const menuAction = menuItem.dataset.menuAction;
   const id = menu.dataset.linkId;
@@ -2209,6 +2230,15 @@ const DEFAULT_WORKSPACES = [
 let workspaces = [];
 let currentWorkspaceId = 'all';
 
+function patternMatchesDomain(pattern, domain) {
+  const p = pattern.toLowerCase();
+  const d = domain.toLowerCase();
+  if (p.startsWith('.') || p.endsWith('.') || p.includes('.')) {
+    return d === p || d.endsWith('.' + p) || d.includes(p);
+  }
+  return d.includes(p);
+}
+
 async function loadWorkspaces() {
   try {
     const result = await chrome.storage.local.get(['workspaces', 'currentWorkspaceId']);
@@ -2220,6 +2250,37 @@ async function loadWorkspaces() {
     }
     if (result.currentWorkspaceId) {
       currentWorkspaceId = result.currentWorkspaceId;
+    }
+
+    let needsSave = false;
+    
+    workspaces.forEach(targetWs => {
+      if (targetWs.id === 'all' || !targetWs.patterns) return;
+      
+      targetWs.patterns.forEach(targetPattern => {
+        workspaces.forEach(ws => {
+          if (ws.id === 'all' || ws.id === targetWs.id || !ws.patterns) return;
+          
+          const hadOverlap = ws.patterns.some(p => {
+            if (patternMatchesDomain(p, targetPattern)) return true;
+            if (patternMatchesDomain(targetPattern, p)) return true;
+            return false;
+          });
+          
+          if (hadOverlap) {
+            ws.patterns = ws.patterns.filter(p => {
+              if (patternMatchesDomain(p, targetPattern)) return false;
+              if (patternMatchesDomain(targetPattern, p)) return false;
+              return true;
+            });
+            needsSave = true;
+          }
+        });
+      });
+    });
+
+    if (needsSave) {
+      await saveWorkspaces();
     }
   } catch (err) {
     console.warn('[tab-out] Failed to load workspaces:', err);
@@ -2398,6 +2459,24 @@ document.addEventListener('contextmenu', async (e) => {
 // Drag and drop — add domains to workspaces
 let draggedDomain = null;
 
+async function checkAndShowDragHint() {
+  const result = await chrome.storage.local.get('hasSeenDragHint');
+  if (!result.hasSeenDragHint) {
+    const overlay = document.getElementById('dragHintOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+  }
+}
+
+async function markDragHintSeen() {
+  await chrome.storage.local.set({ hasSeenDragHint: true });
+  const overlay = document.getElementById('dragHintOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+}
+
 document.addEventListener('dragstart', (e) => {
   const target = e.target.closest('[data-drag-domain]');
   if (!target) return;
@@ -2407,6 +2486,8 @@ document.addEventListener('dragstart', (e) => {
     e.dataTransfer.setData('text/plain', draggedDomain);
   }
   target.classList.add('dragging');
+  document.getElementById('workspaceBar').classList.add('drop-active');
+  markDragHintSeen();
 });
 
 document.addEventListener('dragend', (e) => {
@@ -2414,6 +2495,7 @@ document.addEventListener('dragend', (e) => {
   if (target) target.classList.remove('dragging');
   draggedDomain = null;
   document.querySelectorAll('.workspace-tab.drag-over').forEach(el => el.classList.remove('drag-over'));
+  document.getElementById('workspaceBar').classList.remove('drop-active');
 });
 
 document.addEventListener('dragover', (e) => {
@@ -2456,20 +2538,29 @@ document.addEventListener('drop', async (e) => {
   }
   if (!domain) return;
 
+  const normalizedDomain = domain.replace(/^www\./, '');
+
   const ws = workspaces.find(w => w.id === wsId);
   if (!ws) return;
 
   if (!ws.patterns) ws.patterns = [];
-  if (ws.patterns.includes(domain)) {
+  const alreadyInTarget = ws.patterns.some(p => patternMatchesDomain(p, normalizedDomain));
+  if (alreadyInTarget) {
     showToast(`"${domain}" already in ${ws.name}`);
     return;
   }
 
-  ws.patterns.push(domain);
+  workspaces.forEach(w => {
+    if (w.id !== 'all' && w.id !== wsId && w.patterns) {
+      w.patterns = w.patterns.filter(p => !patternMatchesDomain(p, normalizedDomain));
+    }
+  });
+
+  ws.patterns.push(normalizedDomain);
   await saveWorkspaces();
   renderWorkspaceBar();
   renderDashboard();
-  showToast(`Added "${domain}" to ${ws.name}`);
+  showToast(`Moved "${domain}" to ${ws.name}`);
 });
 
 // Global favicon image load/error handlers (CSP-safe, no inline events)
@@ -2501,6 +2592,7 @@ document.addEventListener('load', (e) => {
 (async function init() {
   await loadWorkspaces();
   await renderDashboard();
+  checkAndShowDragHint();
 })();
 
 setInterval(() => {
