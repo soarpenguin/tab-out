@@ -313,6 +313,11 @@ function showCustomPrompt(options) {
       currentPromptKeydownHandler = null;
     }
 
+    if (currentLinkMenuCloseHandler) {
+      document.removeEventListener('click', currentLinkMenuCloseHandler);
+      currentLinkMenuCloseHandler = null;
+    }
+
     titleEl.textContent = options.title || 'Prompt';
     labelEl.textContent = options.label || 'Enter:';
     inputEl.value = options.value || options.defaultValue || '';
@@ -352,6 +357,104 @@ function showCustomPrompt(options) {
       e.stopPropagation();
       close();
       resolve(inputEl.value.trim() || null);
+    };
+
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(null);
+    };
+
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        close();
+        resolve(null);
+      }
+    };
+
+    modal.style.display = 'flex';
+    document.addEventListener('keydown', handleKeydown);
+    inputEl.focus();
+  });
+}
+
+function showQuickLinkModal(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('customModal');
+    const titleEl = document.getElementById('modalTitle');
+    const labelEl = document.getElementById('modalLabel');
+    const inputEl = document.getElementById('modalInput');
+    const labelEl2 = document.getElementById('modalLabel2');
+    const inputEl2 = document.getElementById('modalInput2');
+    const cancelBtn = document.getElementById('modalCancel');
+    const confirmBtn = document.getElementById('modalConfirm');
+    const closeBtn = document.getElementById('modalClose');
+
+    if (currentPromptKeydownHandler) {
+      document.removeEventListener('keydown', currentPromptKeydownHandler);
+      currentPromptKeydownHandler = null;
+    }
+
+    if (currentLinkMenuCloseHandler) {
+      document.removeEventListener('click', currentLinkMenuCloseHandler);
+      currentLinkMenuCloseHandler = null;
+    }
+
+    titleEl.textContent = options.title || 'Quick Link';
+    labelEl.textContent = 'URL:';
+    inputEl.value = options.url || '';
+    labelEl.style.display = 'block';
+    inputEl.style.display = 'block';
+    
+    labelEl2.textContent = 'Title (optional):';
+    inputEl2.value = options.title || '';
+    labelEl2.style.display = 'block';
+    inputEl2.style.display = 'block';
+    
+    confirmBtn.textContent = options.confirmText || 'OK';
+
+    const close = () => {
+      modal.style.display = 'none';
+      if (currentPromptKeydownHandler) {
+        document.removeEventListener('keydown', currentPromptKeydownHandler);
+        currentPromptKeydownHandler = null;
+      }
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        close();
+        resolve(null);
+      } else if (e.key === 'Enter') {
+        e.stopPropagation();
+        close();
+        const url = inputEl.value.trim();
+        if (!url) {
+          resolve(null);
+          return;
+        }
+        resolve({ url, title: inputEl2.value.trim() });
+      }
+    };
+
+    currentPromptKeydownHandler = handleKeydown;
+
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      resolve(null);
+    };
+
+    confirmBtn.onclick = (e) => {
+      e.stopPropagation();
+      close();
+      const url = inputEl.value.trim();
+      if (!url) {
+        resolve(null);
+        return;
+      }
+      resolve({ url, title: inputEl2.value.trim() });
     };
 
     closeBtn.onclick = (e) => {
@@ -1869,20 +1972,15 @@ document.addEventListener('click', async (e) => {
 
   // ---- Add quick link ----
   if (action === 'add-quick-link') {
-    const url = await showCustomPrompt({
-      title: 'Add Quick Link',
-      label: 'Enter URL:'
+    const result = await showQuickLinkModal({
+      title: 'Add Quick Link'
     });
-    if (!url) return;
-    let formattedUrl = url;
+    if (!result) return;
+    let formattedUrl = result.url;
     if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(formattedUrl)) {
       formattedUrl = 'https://' + formattedUrl;
     }
-    const title = await showCustomPrompt({
-      title: 'Add Quick Link',
-      label: 'Enter title (optional):'
-    });
-    await saveQuickLink({ url: formattedUrl, title: title || '' });
+    await saveQuickLink({ url: formattedUrl, title: result.title || '' });
     renderQuickLinks();
     showToast('Quick link added');
     return;
@@ -2019,35 +2117,28 @@ document.addEventListener('click', async (e) => {
   menu.style.display = 'none';
 
   if (menuAction === 'edit') {
-    if (!id) return;
+      if (!id) return;
 
-    const newUrl = await showCustomPrompt({
-      title: 'Edit Quick Link',
-      label: 'URL:',
-      defaultValue: currentUrl
-    });
-    if (newUrl === null) return;
-    if (!newUrl.trim()) {
-      showToast('URL cannot be empty');
-      return;
-    }
+      const result = await showQuickLinkModal({
+        title: 'Edit Quick Link',
+        url: currentUrl,
+        title: currentTitle
+      });
+      if (!result) return;
+      if (!result.url.trim()) {
+        showToast('URL cannot be empty');
+        return;
+      }
 
-    let formattedUrl = newUrl.trim();
-    if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(formattedUrl)) {
-      formattedUrl = 'https://' + formattedUrl;
-    }
+      let formattedUrl = result.url.trim();
+      if (!/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(formattedUrl)) {
+        formattedUrl = 'https://' + formattedUrl;
+      }
 
-    const newTitle = await showCustomPrompt({
-      title: 'Edit Quick Link',
-      label: 'Title (optional):',
-      defaultValue: currentTitle
-    });
-    if (newTitle === null) return;
-
-    await updateQuickLink(id, { url: formattedUrl, title: newTitle || '' });
-    renderQuickLinks();
-    showToast('Quick link updated');
-  } else if (menuAction === 'delete') {
+      await updateQuickLink(id, { url: formattedUrl, title: result.title || '' });
+      renderQuickLinks();
+      showToast('Quick link updated');
+    } else if (menuAction === 'delete') {
     if (!id) return;
     await deleteQuickLink(id);
     renderQuickLinks();
