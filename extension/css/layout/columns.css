@@ -1,0 +1,35 @@
+.dashboard-columns {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.dashboard-columns .active-section {
+  flex: 1;
+  min-width: 600px;
+}
+
+.deferred-column {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 32px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+@media (max-width: 800px) {
+  .dashboard-columns {
+    flex-direction: column;
+  }
+  .quick-todo-row {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-columns .active-section {
+    min-width: 0;
+  }
+  .deferred-column {
+    width: 100%;
+    position: static;
+  }
+}

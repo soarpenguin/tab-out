@@ -1,0 +1,143 @@
+.quick-todo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.quick-links-card {
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.quick-links-card .section-header {
+  margin-bottom: 12px;
+}
+
+.quick-links-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quick-link-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.04);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-link-item:hover {
+  background: rgba(0,0,0,0.08);
+  transform: scale(1.1);
+}
+
+.quick-link-favicon {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+}
+
+.quick-link-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background: var(--accent-sage);
+  border-radius: 50%;
+}
+
+.quick-link-title,
+.quick-link-url {
+  display: none;
+}
+
+.quick-link-menu {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: white;
+  border: 1px solid var(--warm-gray);
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.quick-link-item:hover .quick-link-menu {
+  opacity: 1;
+}
+
+.quick-link-menu:hover {
+  color: var(--accent-slate);
+}
+
+.quick-link-menu svg {
+  width: 12px;
+  height: 12px;
+}
+
+.quick-link-delete {
+  display: none;
+}
+
+.link-context-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 1px solid var(--warm-gray);
+  padding: 4px;
+  min-width: 120px;
+  z-index: 1000;
+  display: none;
+}
+
+.link-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink);
+  border-radius: 4px;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.link-menu-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+.link-menu-item + .link-menu-item {
+  border-top: 1px solid var(--warm-gray);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.quick-links-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 16px 0;
+  text-align: center;
+}

@@ -9,7 +9,28 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/base/variables.css">
+  <link rel="stylesheet" href="css/base/reset.css">
+  <link rel="stylesheet" href="css/layout/header.css">
+  <link rel="stylesheet" href="css/layout/footer.css">
+  <link rel="stylesheet" href="css/layout/columns.css">
+  <link rel="stylesheet" href="css/components/workspace-bar.css">
+  <link rel="stylesheet" href="css/components/mission-card.css">
+  <link rel="stylesheet" href="css/components/page-chip.css">
+  <link rel="stylesheet" href="css/components/quick-links.css">
+  <link rel="stylesheet" href="css/components/todo.css">
+  <link rel="stylesheet" href="css/components/deferred.css">
+  <link rel="stylesheet" href="css/components/banner.css">
+  <link rel="stylesheet" href="css/components/empty-state.css">
+  <link rel="stylesheet" href="css/ui/section-header.css">
+  <link rel="stylesheet" href="css/ui/search.css">
+  <link rel="stylesheet" href="css/ui/modal.css">
+  <link rel="stylesheet" href="css/ui/drawer.css">
+  <link rel="stylesheet" href="css/ui/toast.css">
+  <link rel="stylesheet" href="css/ui/toggle.css">
+  <link rel="stylesheet" href="css/ui/settings.css">
+  <link rel="stylesheet" href="css/ui/actions.css">
+  <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
 <div class="container">
@@ -365,10 +386,35 @@
 </div>
 
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->
-<!-- If the file doesn't exist, that's fine — app.js uses sensible defaults. -->
+<!-- If the file doesn't exist, that's fine — app uses sensible defaults. -->
 <script src="config.local.js"></script>
 
-<!-- Main dashboard logic — loads last so the DOM is ready -->
-<script src="app.js"></script>
+<!-- Core modules -->
+<script src="js/core/chrome-api.js"></script>
+<script src="js/core/storage.js"></script>
+
+<!-- UI utilities -->
+<script src="js/ui/helpers.js"></script>
+<script src="js/ui/icons.js"></script>
+<script src="js/ui/domain-cleanup.js"></script>
+<script src="js/ui/tab-age.js"></script>
+
+<!-- Renderers -->
+<script src="js/renderer/domain-cards.js"></script>
+<script src="js/renderer/deferred-list.js"></script>
+<script src="js/renderer/dashboard.js"></script>
+
+<!-- Feature modules -->
+<script src="js/features/search.js"></script>
+<script src="js/features/workspaces.js"></script>
+<script src="js/features/sessions.js"></script>
+<script src="js/features/settings.js"></script>
+
+<!-- Event handlers -->
+<script src="js/events/handlers.js"></script>
+<script src="js/events/toolbar-events.js"></script>
+
+<!-- Initialization -->
+<script src="js/init.js"></script>
 </body>
 </html>
