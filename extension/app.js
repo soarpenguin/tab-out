@@ -2696,3 +2696,416 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   if (changes.quickLinks) renderQuickLinks();
   if (changes.todos) renderTodos();
 });
+
+/* ----------------------------------------------------------------
+   BOTTOM TOOLBAR FUNCTIONS
+   ---------------------------------------------------------------- */
+
+async function suspendTabs() {
+  const tabs = await chrome.tabs.query({});
+  const activeTab = await chrome.tabs.query({ active: true, currentWindow: true });
+  const inactiveCount = tabs.length - activeTab.length;
+  
+  if (inactiveCount === 0) {
+    showToast('No inactive tabs to suspend');
+    return;
+  }
+
+  for (const tab of tabs) {
+    if (tab.id !== activeTab[0]?.id && !tab.pinned) {
+      try {
+        await chrome.tabs.discard(tab.id);
+      } catch (e) {}
+    }
+  }
+  
+  showToast(`Suspended ${inactiveCount} tabs · Freed memory`);
+  await renderDashboard();
+}
+
+/* ----------------------------------------------------------------
+   SAVE SESSION FUNCTIONS
+   ---------------------------------------------------------------- */
+
+let savedSessions = [];
+
+async function loadSavedSessions() {
+  const result = await chrome.storage.local.get('savedSessions');
+  savedSessions = result.savedSessions || [];
+  renderSavedSessions();
+}
+
+function renderSavedSessions() {
+  const list = document.getElementById('savedSessionsList');
+  if (!list) return;
+
+  if (savedSessions.length === 0) {
+    list.innerHTML = '<div class="session-empty">No saved sessions yet.</div>';
+    return;
+  }
+
+  list.innerHTML = savedSessions.map((session, index) => `
+    <div class="session-item" data-session-index="${index}">
+      <div class="session-icon">💾</div>
+      <div class="session-info">
+        <div class="session-name">${escapeHtml(session.name)}</div>
+        <div class="session-meta">${session.tabCount} tabs · ${formatDate(session.timestamp)}</div>
+      </div>
+      <button class="session-action" data-action="delete-session" data-session-index="${index}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function formatDate(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diff = now - date;
+  
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+  
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function openSaveSessionModal() {
+  const modal = document.getElementById('saveSessionModal');
+  const input = document.getElementById('saveSessionInput');
+  const desc = document.getElementById('saveSessionDesc');
+  
+  if (!modal || !input) return;
+  
+  chrome.tabs.query({}, (tabs) => {
+    const count = tabs.length;
+    desc.textContent = `Save all ${count} tabs as a named session you can restore later.`;
+  });
+  
+  input.value = '';
+  modal.style.display = 'flex';
+  input.focus();
+  
+  if (currentPromptKeydownHandler) {
+    document.removeEventListener('keydown', currentPromptKeydownHandler);
+    currentPromptKeydownHandler = null;
+  }
+  
+  const handleKeydown = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      closeSaveSessionModal();
+    } else if (e.key === 'Enter') {
+      e.stopPropagation();
+      saveSession();
+    }
+  };
+  
+  currentPromptKeydownHandler = handleKeydown;
+  document.addEventListener('keydown', handleKeydown);
+}
+
+function closeSaveSessionModal() {
+  const modal = document.getElementById('saveSessionModal');
+  if (modal) modal.style.display = 'none';
+  
+  if (currentPromptKeydownHandler) {
+    document.removeEventListener('keydown', currentPromptKeydownHandler);
+    currentPromptKeydownHandler = null;
+  }
+}
+
+async function saveSession() {
+  const input = document.getElementById('saveSessionInput');
+  if (!input) return;
+  
+  const name = input.value.trim();
+  if (!name) {
+    input.style.borderColor = '#b35a5a';
+    setTimeout(() => input.style.borderColor = '', 1000);
+    return;
+  }
+  
+  const tabs = await chrome.tabs.query({});
+  const sessionData = {
+    name,
+    tabCount: tabs.length,
+    timestamp: Date.now(),
+    tabs: tabs.map(tab => ({
+      url: tab.url,
+      title: tab.title,
+      pinned: tab.pinned
+    }))
+  };
+  
+  savedSessions.unshift(sessionData);
+  await chrome.storage.local.set({ savedSessions });
+  renderSavedSessions();
+  closeSaveSessionModal();
+  showToast(`Saved "${name}" (${tabs.length} tabs)`);
+}
+
+async function deleteSession(index) {
+  savedSessions.splice(index, 1);
+  await chrome.storage.local.set({ savedSessions });
+  renderSavedSessions();
+}
+
+async function restoreSession(index) {
+  const session = savedSessions[index];
+  if (!session) return;
+  
+  for (const tab of session.tabs) {
+    await chrome.tabs.create({ url: tab.url, pinned: tab.pinned });
+  }
+  
+  showToast(`Restored "${session.name}" (${session.tabCount} tabs)`);
+}
+
+/* ----------------------------------------------------------------
+   SETTINGS DRAWER FUNCTIONS
+   ---------------------------------------------------------------- */
+
+let settings = {
+  showTabAge: true,
+  warnOldTabs: true,
+  theme: 'warm-light',
+  compactMode: false,
+  autoGroupByDomain: true,
+  showWorkspaceBar: true
+};
+
+async function loadSettings() {
+  const result = await chrome.storage.local.get('tabOutSettings');
+  settings = { ...settings, ...(result.tabOutSettings || {}) };
+  applySettings();
+}
+
+function applySettings() {
+  document.querySelectorAll('.toggle[data-setting]').forEach(toggle => {
+    const settingName = toggle.dataset.setting;
+    if (settings[settingName]) {
+      toggle.classList.add('on');
+    } else {
+      toggle.classList.remove('on');
+    }
+  });
+  
+  document.querySelectorAll('.setting-select[data-setting]').forEach(select => {
+    const settingName = select.dataset.setting;
+    if (settings[settingName]) {
+      select.value = settings[settingName];
+    }
+  });
+}
+
+function openSettings() {
+  const overlay = document.getElementById('drawerOverlay');
+  const drawer = document.getElementById('settingsDrawer');
+  
+  if (!overlay || !drawer) return;
+  
+  loadSavedSessions();
+  
+  overlay.style.display = 'block';
+  setTimeout(() => {
+    overlay.classList.add('visible');
+    drawer.classList.add('visible');
+  }, 10);
+}
+
+function closeSettings() {
+  const overlay = document.getElementById('drawerOverlay');
+  const drawer = document.getElementById('settingsDrawer');
+  
+  if (!overlay || !drawer) return;
+  
+  overlay.classList.remove('visible');
+  drawer.classList.remove('visible');
+  
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 300);
+}
+
+async function saveSettings() {
+  document.querySelectorAll('.toggle[data-setting]').forEach(toggle => {
+    const settingName = toggle.dataset.setting;
+    settings[settingName] = toggle.classList.contains('on');
+  });
+  
+  document.querySelectorAll('.setting-select[data-setting]').forEach(select => {
+    const settingName = select.dataset.setting;
+    settings[settingName] = select.value;
+  });
+  
+  await chrome.storage.local.set({ tabOutSettings: settings });
+  closeSettings();
+  showToast('Settings saved');
+}
+
+async function clearAllData() {
+  const confirmed = await showCustomConfirm({
+    title: 'Clear All Data',
+    message: 'Are you sure you want to clear all data including sessions, settings, and history? This cannot be undone.'
+  });
+  
+  if (!confirmed) return;
+  
+  await chrome.storage.local.clear();
+  savedSessions = [];
+  settings = {
+    showTabAge: true,
+    warnOldTabs: true,
+    theme: 'warm-light',
+    compactMode: false,
+    autoGroupByDomain: true,
+    showWorkspaceBar: true
+  };
+  
+  renderSavedSessions();
+  applySettings();
+  showToast('All data cleared');
+}
+
+/* ----------------------------------------------------------------
+   BOTTOM TOOLBAR AND SETTINGS EVENT HANDLERS
+   ---------------------------------------------------------------- */
+
+document.addEventListener('click', async (e) => {
+  const actionEl = e.target.closest('[data-action]');
+  if (!actionEl) return;
+  
+  const action = actionEl.dataset.action;
+  
+  // ---- Toolbar Search ----
+  if (action === 'toolbar-search') {
+    focusSearch();
+    return;
+  }
+  
+  // ---- Toolbar Suspend ----
+  if (action === 'toolbar-suspend') {
+    await suspendTabs();
+    return;
+  }
+  
+  // ---- Toolbar Save Session ----
+  if (action === 'toolbar-save-session') {
+    openSaveSessionModal();
+    return;
+  }
+  
+  // ---- Toolbar Settings ----
+  if (action === 'toolbar-settings') {
+    openSettings();
+    return;
+  }
+  
+  // ---- Close Save Session Modal ----
+  if (action === 'close-save-session-modal') {
+    closeSaveSessionModal();
+    return;
+  }
+  
+  // ---- Save Session ----
+  if (action === 'do-save-session') {
+    await saveSession();
+    return;
+  }
+  
+  // ---- Delete Session ----
+  if (action === 'delete-session') {
+    e.stopPropagation();
+    const index = parseInt(actionEl.dataset.sessionIndex);
+    if (!isNaN(index)) await deleteSession(index);
+    return;
+  }
+  
+  // ---- Close Drawer ----
+  if (action === 'close-drawer') {
+    closeSettings();
+    return;
+  }
+  
+  // ---- Save Settings ----
+  if (action === 'save-settings') {
+    await saveSettings();
+    return;
+  }
+  
+  // ---- Clear All Data ----
+  if (action === 'clear-all-data') {
+    await clearAllData();
+    return;
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const toggle = e.target.closest('.toggle[data-setting]');
+  if (!toggle) return;
+  
+  toggle.classList.toggle('on');
+});
+
+document.addEventListener('click', (e) => {
+  const sessionItem = e.target.closest('.session-item[data-session-index]');
+  if (!sessionItem) return;
+  
+  const actionBtn = e.target.closest('.session-action');
+  if (actionBtn) return;
+  
+  const index = parseInt(sessionItem.dataset.sessionIndex);
+  if (!isNaN(index)) restoreSession(index);
+});
+
+document.addEventListener('click', (e) => {
+  const modal = document.getElementById('saveSessionModal');
+  if (!modal) return;
+  
+  if (e.target === modal) {
+    closeSaveSessionModal();
+  }
+  
+  const closeBtn = e.target.closest('#saveSessionModalClose');
+  if (closeBtn) {
+    closeSaveSessionModal();
+  }
+  
+  const cancelBtn = e.target.closest('#saveSessionModalCancel');
+  if (cancelBtn) {
+    closeSaveSessionModal();
+  }
+  
+  const confirmBtn = e.target.closest('#saveSessionModalConfirm');
+  if (confirmBtn) {
+    saveSession();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const overlay = document.getElementById('drawerOverlay');
+  const drawer = document.getElementById('settingsDrawer');
+  
+  if (!overlay || !drawer) return;
+  
+  if (e.target === overlay) {
+    closeSettings();
+  }
+  
+  const closeBtn = e.target.closest('#drawerClose');
+  if (closeBtn) {
+    closeSettings();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeSettings();
+    closeSaveSessionModal();
+  }
+});
+
+// Load settings on init
+loadSettings();

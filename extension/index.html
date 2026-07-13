@@ -159,17 +159,36 @@
   </div><!-- end .dashboard-columns -->
 
   <!-- ================================================================
-       FOOTER — global stats + refresh control
+       FOOTER — merged bottom bar with stats, actions, and brand
        ================================================================ -->
   <footer>
-    <div class="footer-stats">
-      <div class="stat">
-        <div class="stat-num" id="statTabs">—</div>
-        <div class="stat-label">Open tabs</div>
-      </div>
+    <div class="footer-left">
+      <span class="footer-stat-num" id="statTabs">—</span>
+      <span class="footer-stat-label">Open tabs</span>
     </div>
-    <div class="last-refresh">
-      <span style="color: var(--muted); font-size: 11px;">Tab Out by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a> & <a href="https://github.com/soarpenguin/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Soar</a></span>
+    <div class="footer-actions">
+      <span class="footer-action" data-action="toolbar-search" title="Search (Cmd+K)">
+        <svg class="footer-action-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Search
+      </span>
+      <span class="footer-action-divider">|</span>
+      <span class="footer-action" data-action="toolbar-suspend" title="Suspend tabs">
+        <svg class="footer-action-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        Suspend
+      </span>
+      <span class="footer-action-divider">|</span>
+      <span class="footer-action" data-action="toolbar-save-session" title="Save session">
+        <svg class="footer-action-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Session
+      </span>
+      <span class="footer-action-divider">|</span>
+      <span class="footer-action" data-action="toolbar-settings" title="Settings">
+        <svg class="footer-action-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        Settings
+      </span>
+    </div>
+    <div class="footer-brand">
+      Tab Out by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a> & <a href="https://github.com/soarpenguin/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Soar</a>
     </div>
   </footer>
 
@@ -215,6 +234,134 @@
 <div id="linkContextMenu" class="link-context-menu">
   <button class="link-menu-item" data-menu-action="edit">Edit</button>
   <button class="link-menu-item" data-menu-action="delete">Delete</button>
+</div>
+
+<!-- ================================================================
+     SAVE SESSION MODAL
+     ================================================================ -->
+<div class="modal-overlay" id="saveSessionModal" style="display:none">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 id="saveSessionModalTitle">Save Session</h3>
+      <button class="modal-close" id="saveSessionModalClose">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="saveSessionInput" id="saveSessionLabel">Session name:</label>
+      <input type="text" id="saveSessionInput" class="modal-input" placeholder="e.g., AI Research, Weekend Reading...">
+      <div id="saveSessionDesc"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn modal-btn-cancel" id="saveSessionModalCancel">Cancel</button>
+      <button class="modal-btn modal-btn-primary" id="saveSessionModalConfirm">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     SETTINGS DRAWER
+     ================================================================ -->
+<div class="drawer-overlay" id="drawerOverlay" style="display:none"></div>
+<div class="drawer" id="settingsDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Settings</div>
+    <button class="drawer-close" id="drawerClose">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <div class="drawer-section-title">General</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Show tab age</div>
+          <div class="setting-desc">Display how long each tab has been open</div>
+        </div>
+        <div class="toggle on" data-setting="showTabAge">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Warn on old tabs</div>
+          <div class="setting-desc">Highlight tabs older than 24 hours</div>
+        </div>
+        <div class="toggle on" data-setting="warnOldTabs">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Appearance</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Theme</div>
+          <div class="setting-desc">Choose your preferred color scheme</div>
+        </div>
+        <select class="setting-select" data-setting="theme">
+          <option value="warm-light">Warm Light</option>
+          <option value="cool-light">Cool Light</option>
+          <option value="dark">Dark</option>
+          <option value="system">System</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Compact mode</div>
+          <div class="setting-desc">Show more tabs with less padding</div>
+        </div>
+        <div class="toggle" data-setting="compactMode">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Workspaces</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Auto-group by domain</div>
+          <div class="setting-desc">Automatically create groups from domains</div>
+        </div>
+        <div class="toggle on" data-setting="autoGroupByDomain">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Show workspace bar</div>
+          <div class="setting-desc">Display workspace tabs at the top</div>
+        </div>
+        <div class="toggle on" data-setting="showWorkspaceBar">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Saved Sessions</div>
+      <div id="savedSessionsList">
+        <div class="session-empty">No saved sessions yet.</div>
+      </div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Data & Privacy</div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Clear all data</div>
+          <div class="setting-desc">Remove sessions, settings, and history</div>
+        </div>
+        <button class="setting-btn-danger" data-action="clear-all-data">Clear</button>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="drawer-btn drawer-btn-secondary" data-action="close-drawer">Cancel</button>
+    <button class="drawer-btn drawer-btn-primary" data-action="save-settings">Save Changes</button>
+  </div>
 </div>
 
 <!-- Personal config (gitignored) — defines LOCAL_LANDING_PAGE_PATTERNS etc. -->

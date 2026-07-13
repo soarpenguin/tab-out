@@ -27,6 +27,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   min-height: 100vh;
+  padding-bottom: 50px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -1327,55 +1328,73 @@ header .time {
 
 /* ---- Footer ---- */
 footer {
-  margin-top: 48px;
-  padding-top: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
   border-top: 1px solid var(--warm-gray);
+  padding: 10px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  z-index: 100;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
 }
 
-.footer-stats {
+.footer-left {
   display: flex;
-  gap: 32px;
+  align-items: baseline;
+  gap: 6px;
 }
 
-.stat {
-  text-align: center;
-}
-
-.stat-num {
+.footer-stat-num {
   font-family: 'Newsreader', serif;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 300;
   color: var(--ink);
   line-height: 1;
-  transition: all 0.3s;
 }
 
-.stat-label {
-  font-size: 10px;
+.footer-stat-label {
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   color: var(--muted);
-  margin-top: 4px;
 }
 
-.last-refresh {
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-action {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.footer-action:hover {
+  color: var(--accent-amber);
+}
+
+.footer-action-icon {
+  flex-shrink: 0;
+}
+
+.footer-action-divider {
+  font-size: 12px;
+  color: var(--warm-gray);
+}
+
+.footer-brand {
   font-size: 11px;
   color: var(--muted);
-}
-
-.refresh-btn {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--accent-amber);
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 /* ---- Animations ---- */
@@ -1397,6 +1416,309 @@ header { animation: fadeUp 0.5s ease both; }
 .abandoned-section .missions .mission-card:nth-child(2) { animation: fadeUp 0.4s ease 0.55s both; }
 .abandoned-section .missions .mission-card:nth-child(3) { animation: fadeUp 0.4s ease 0.6s both; }
 footer { animation: fadeUp 0.5s ease 0.65s both; }
+
+/* ---- Drawer Overlay ---- */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+  z-index: 400;
+}
+
+.drawer-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---- Drawer ---- */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100vh;
+  background: var(--card-bg);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 401;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer.visible {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--warm-gray);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--paper);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.drawer-close:hover {
+  background: var(--warm-gray);
+  color: var(--ink);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.drawer-section {
+  margin-bottom: 28px;
+}
+
+.drawer-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* ---- Setting Item ---- */
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--warm-gray);
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  flex: 1;
+}
+
+.setting-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.setting-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Toggle Switch ---- */
+.toggle {
+  width: 44px;
+  height: 24px;
+  background: var(--warm-gray);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle.on {
+  background: var(--accent-amber);
+}
+
+.toggle-knob {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.toggle.on .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ---- Setting Select ---- */
+.setting-select {
+  padding: 6px 10px;
+  border: 1px solid var(--warm-gray);
+  border-radius: 6px;
+  background: var(--card-bg);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.setting-select:focus {
+  border-color: var(--accent-amber);
+}
+
+/* ---- Session Item ---- */
+.session-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 6px;
+}
+
+.session-item:hover {
+  background: var(--paper);
+}
+
+.session-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(200, 113, 58, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.session-info {
+  flex: 1;
+}
+
+.session-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.session-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.session-action {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--muted);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.session-item:hover .session-action {
+  opacity: 1;
+}
+
+.session-action:hover {
+  background: var(--warm-gray);
+  color: var(--accent-rose);
+}
+
+.session-empty {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ---- Drawer Footer ---- */
+.drawer-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--warm-gray);
+  display: flex;
+  gap: 10px;
+}
+
+.drawer-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.drawer-btn-primary {
+  background: var(--accent-amber);
+  color: white;
+}
+
+.drawer-btn-primary:hover {
+  background: #b86532;
+}
+
+.drawer-btn-secondary {
+  background: var(--paper);
+  color: var(--muted);
+}
+
+.drawer-btn-secondary:hover {
+  background: var(--warm-gray);
+}
+
+/* ---- Setting Button Danger ---- */
+.setting-btn-danger {
+  padding: 6px 12px;
+  border: 1px solid var(--accent-rose);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-rose);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.setting-btn-danger:hover {
+  background: rgba(179, 90, 90, 0.08);
+}
+
+/* ---- Save Session Modal Desc ---- */
+#saveSessionDesc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
 
 .deferred-list .deferred-item:nth-child(1) { animation-delay: 0.05s; }
 .deferred-list .deferred-item:nth-child(2) { animation-delay: 0.1s; }
