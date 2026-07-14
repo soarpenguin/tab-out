@@ -11,6 +11,69 @@ async function loadSettings() {
   const result = await chrome.storage.local.get('tabOutSettings');
   settings = { ...settings, ...(result.tabOutSettings || {}) };
   applySettings();
+  
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (settings.theme === 'system') {
+      applyTheme(e.matches ? 'dark' : 'warm-light');
+    }
+  });
+}
+
+const THEME_VARIABLES = {
+  'warm-light': {
+    '--ink': '#1a1613',
+    '--paper': '#f8f5f0',
+    '--warm-gray': '#e8e2da',
+    '--muted': '#9a918a',
+    '--accent-amber': '#c8713a',
+    '--accent-sage': '#5a7a62',
+    '--accent-slate': '#5a6b7a',
+    '--accent-rose': '#b35a5a',
+    '--status-active': '#3d7a4a',
+    '--status-cooling': '#b8892e',
+    '--status-abandoned': '#b35a5a',
+    '--card-bg': '#fffdf9',
+    '--shadow': 'rgba(26, 22, 19, 0.06)'
+  },
+  'cool-light': {
+    '--ink': '#1a1d24',
+    '--paper': '#f4f6f8',
+    '--warm-gray': '#dde1e6',
+    '--muted': '#7a8599',
+    '--accent-amber': '#c8713a',
+    '--accent-sage': '#4a90a4',
+    '--accent-slate': '#5a6b7a',
+    '--accent-rose': '#c44569',
+    '--status-active': '#3d7a4a',
+    '--status-cooling': '#b8892e',
+    '--status-abandoned': '#c44569',
+    '--card-bg': '#ffffff',
+    '--shadow': 'rgba(26, 29, 36, 0.06)'
+  },
+  'dark': {
+    '--ink': '#f0ebe6',
+    '--paper': '#1a1613',
+    '--warm-gray': '#3a3530',
+    '--muted': '#9a918a',
+    '--accent-amber': '#d4a574',
+    '--accent-sage': '#7ab88a',
+    '--accent-slate': '#8ba3b8',
+    '--accent-rose': '#d47878',
+    '--status-active': '#5aa06a',
+    '--status-cooling': '#d4a574',
+    '--status-abandoned': '#d47878',
+    '--card-bg': '#2a2520',
+    '--shadow': 'rgba(0, 0, 0, 0.3)'
+  }
+};
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const variables = THEME_VARIABLES[theme] || THEME_VARIABLES['warm-light'];
+  
+  for (const [key, value] of Object.entries(variables)) {
+    root.style.setProperty(key, value);
+  }
 }
 
 function applySettings() {
@@ -29,6 +92,12 @@ function applySettings() {
       select.value = settings[settingName];
     }
   });
+
+  let themeToApply = settings.theme;
+  if (themeToApply === 'system') {
+    themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'warm-light';
+  }
+  applyTheme(themeToApply);
 }
 
 function openSettings() {
@@ -72,6 +141,7 @@ async function saveSettings() {
   });
 
   await chrome.storage.local.set({ tabOutSettings: settings });
+  applySettings();
   closeSettings();
   showToast('Settings saved');
 }
