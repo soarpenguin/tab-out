@@ -47,11 +47,13 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     try { domain = new URL(tab.url).hostname.replace(/^www\./, ''); } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
-    const ageClass = ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
+    const shouldShowAge = settings.showTabAge && (settings.warnOldTabs ? ageInfo.level !== 'fresh' : true);
+    const ageClass = shouldShowAge && ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
+    const ageDisplay = shouldShowAge ? `<span class="tab-age${ageClass}">${ageInfo.text}</span>` : '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
-      <span class="tab-age${ageClass}">${ageInfo.text}</span>
+      ${ageDisplay}
       <div class="chip-actions">
         <button class="chip-action chip-save" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save for later">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" /></svg>

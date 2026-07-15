@@ -168,6 +168,12 @@ function renderWorkspaceBar() {
   const bar = document.getElementById('workspaceBar');
   if (!bar) return;
 
+  if (!settings.showWorkspaceBar) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+
   const tabsHtml = workspaces.map(ws => {
     const count = countTabsInWorkspace(ws);
     const isActive = ws.id === currentWorkspaceId;

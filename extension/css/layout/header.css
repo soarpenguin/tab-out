@@ -1,8 +1,8 @@
 header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 48px;
+  gap: 12px;
+  margin-bottom: 24px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--warm-gray);
 }

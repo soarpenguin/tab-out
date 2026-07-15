@@ -142,6 +142,7 @@ async function saveSettings() {
 
   await chrome.storage.local.set({ tabOutSettings: settings });
   applySettings();
+  await renderDashboard();
   closeSettings();
   showToast('Settings saved');
 }
