@@ -13,6 +13,13 @@ footer {
   box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
 }
 
+body.theme-frosted-blue footer {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
 .footer-left {
   display: flex;
   align-items: baseline;

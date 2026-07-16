@@ -64,6 +64,21 @@ const THEME_VARIABLES = {
     '--status-abandoned': '#d47878',
     '--card-bg': '#2a2520',
     '--shadow': 'rgba(0, 0, 0, 0.3)'
+  },
+  'frosted-blue': {
+    '--ink': '#1a2a3a',
+    '--paper': '#e8f4fc',
+    '--warm-gray': '#c8d8e8',
+    '--muted': '#6a8a9a',
+    '--accent-amber': '#4a90c0',
+    '--accent-sage': '#5ab8c8',
+    '--accent-slate': '#5a7a9a',
+    '--accent-rose': '#c46589',
+    '--status-active': '#4a90c0',
+    '--status-cooling': '#b8a94e',
+    '--status-abandoned': '#c46569',
+    '--card-bg': 'rgba(255, 255, 255, 0.6)',
+    '--shadow': 'rgba(74, 144, 192, 0.1)'
   }
 };
 
@@ -73,6 +88,11 @@ function applyTheme(theme) {
   
   for (const [key, value] of Object.entries(variables)) {
     root.style.setProperty(key, value);
+  }
+
+  document.body.classList.remove('theme-frosted-blue');
+  if (theme === 'frosted-blue') {
+    document.body.classList.add('theme-frosted-blue');
   }
 }
 

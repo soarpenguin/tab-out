@@ -18,6 +18,14 @@ body::before {
   z-index: 0;
 }
 
+body.theme-frosted-blue {
+  background: linear-gradient(135deg, #e8f4fc 0%, #d4e8f8 50%, #c0d8f0 100%);
+}
+
+body.theme-frosted-blue::before {
+  opacity: 0.02;
+}
+
 .container {
   position: relative;
   z-index: 1;

@@ -16,6 +16,16 @@
   top: 32px;
   max-height: calc(100vh - 64px);
   overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+body.theme-frosted-blue .deferred-column {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 800px) {
