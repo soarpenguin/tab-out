@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="css/ui/toggle.css">
   <link rel="stylesheet" href="css/ui/settings.css">
   <link rel="stylesheet" href="css/ui/actions.css">
+  <link rel="stylesheet" href="css/ui/tab-preview.css">
   <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
@@ -305,6 +306,15 @@
       </div>
       <div class="setting-item">
         <div class="setting-info">
+          <div class="setting-label">Show tab preview</div>
+          <div class="setting-desc">Display thumbnail preview when hovering over tabs</div>
+        </div>
+        <div class="toggle on" data-setting="showTabPreview">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
           <div class="setting-label">Warn on old tabs</div>
           <div class="setting-desc">Highlight tabs older than 24 hours</div>
         </div>
@@ -395,10 +405,11 @@
 <script src="js/core/storage.js"></script>
 
 <!-- UI utilities -->
-<script src="js/ui/helpers.js"></script>
-<script src="js/ui/icons.js"></script>
-<script src="js/ui/domain-cleanup.js"></script>
-<script src="js/ui/tab-age.js"></script>
+  <script src="js/ui/helpers.js"></script>
+  <script src="js/ui/icons.js"></script>
+  <script src="js/ui/domain-cleanup.js"></script>
+  <script src="js/ui/tab-age.js"></script>
+  <script src="js/ui/tab-preview.js"></script>
 
 <!-- Renderers -->
 <script src="js/renderer/domain-cards.js"></script>

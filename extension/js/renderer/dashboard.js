@@ -1,4 +1,8 @@
 async function renderStaticDashboard() {
+  if (typeof hideTabPreview === 'function') {
+    hideTabPreview();
+  }
+
   const greetingEl = document.getElementById('greeting');
   const timeEl     = document.getElementById('timeDisplay');
   const dateEl     = document.getElementById('dateDisplay');

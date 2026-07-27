@@ -139,6 +139,7 @@ tab-out/
 | `js/ui/icons.js` | SVG icon definitions |
 | `js/ui/domain-cleanup.js` | Friendly domain names, title parsing |
 | `js/ui/tab-age.js` | Tab age calculation and formatting |
+| `js/ui/tab-preview.js` | Tab preview capture, caching, and display |
 | `js/renderer/domain-cards.js` | Domain card rendering logic |
 | `js/renderer/deferred-list.js` | Saved tabs and quick links rendering |
 | `js/renderer/dashboard.js` | Main dashboard assembly and rendering |
@@ -153,6 +154,7 @@ tab-out/
 | `css/base/reset.css` | Global reset styles and container layout |
 | `css/layout/*.css` | Layout styles (header, footer, columns) |
 | `css/components/*.css` | Component-specific styles |
+| `css/ui/tab-preview.css` | Tab preview overlay styles |
 | `css/ui/*.css` | UI element styles |
 | `background.js` | Service worker that updates the toolbar badge |
 | `index.html` | New tab page DOM structure |
@@ -264,3 +266,19 @@ Colors are defined in CSS variables in `css/base/variables.css`:
 - **All data local**: `chrome.storage.local` for saved tabs, no server required
 - **No persistent background page**: `background.js` is a service worker that wakes up on events
 - **Document synchronization**: When code structure changes (new files, renamed modules, moved functions), update `AGENTS.md` and `CLAUDE.md` to reflect the new structure so the AI agent has accurate context
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as markdown files under `.scratch/<feature>/` in this repo (local markdown). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Using Chinese labels: 待评估, 待反馈, 可自动化, 需人工, 不处理. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: one `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.

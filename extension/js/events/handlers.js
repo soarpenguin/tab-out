@@ -654,3 +654,20 @@ document.addEventListener('load', (e) => {
     }
   }
 }, true);
+
+document.addEventListener('mouseover', (e) => {
+  if (!(e.target instanceof Element)) return;
+  const chip = e.target.closest('.page-chip.clickable[data-action="focus-tab"]');
+  if (!chip) return;
+  if (!settings || !settings.showTabPreview) return;
+  scheduleShowTabPreview(chip);
+});
+
+document.addEventListener('mouseout', (e) => {
+  if (!(e.target instanceof Element)) return;
+  const chip = e.target.closest('.page-chip.clickable[data-action="focus-tab"]');
+  if (!chip) return;
+  const relatedChip = e.relatedTarget?.closest('.page-chip.clickable[data-action="focus-tab"]');
+  if (relatedChip === chip) return;
+  hideTabPreview();
+});

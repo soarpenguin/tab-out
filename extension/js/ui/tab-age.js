@@ -50,7 +50,7 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     const shouldShowAge = settings.showTabAge && (settings.warnOldTabs ? ageInfo.level !== 'fresh' : true);
     const ageClass = shouldShowAge && ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
     const ageDisplay = shouldShowAge ? `<span class="tab-age${ageClass}">${ageInfo.text}</span>` : '';
-    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
+    return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-id="${tab.id}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}
       <span class="chip-text">${label}</span>${dupeTag}
       ${ageDisplay}

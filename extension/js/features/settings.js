@@ -1,5 +1,6 @@
 let settings = {
   showTabAge: true,
+  showTabPreview: true,
   warnOldTabs: true,
   theme: 'warm-light',
   compactMode: false,
@@ -179,6 +180,7 @@ async function clearAllData() {
   savedSessions = [];
   settings = {
     showTabAge: true,
+    showTabPreview: true,
     warnOldTabs: true,
     theme: 'warm-light',
     compactMode: false,
