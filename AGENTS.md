@@ -141,6 +141,8 @@ tab-out/
 | `js/ui/tab-age.js` | Tab age calculation and formatting |
 | `js/ui/tab-preview.js` | Tab preview capture, caching, and display |
 | `js/renderer/domain-cards.js` | Domain card rendering logic |
+| `js/renderer/lazy-renderer.js` | Lazy loading with IntersectionObserver for incremental card rendering |
+| `js/renderer/virtual-scroll.js` | Virtual scrolling with viewport windowing, height caching, and search mode support |
 | `js/renderer/deferred-list.js` | Saved tabs and quick links rendering |
 | `js/renderer/dashboard.js` | Main dashboard assembly and rendering |
 | `js/features/search.js` | Global search functionality |
@@ -160,6 +162,17 @@ tab-out/
 | `index.html` | New tab page DOM structure |
 | `manifest.json` | Chrome extension manifest (V3) |
 | `config.local.js` | Optional personal configuration (gitignored) |
+
+---
+
+## Performance Architecture
+
+For dashboards with many tab groups, a two-tier optimization strategy keeps rendering smooth:
+
+- **Lazy rendering** (`lazy-renderer.js`): Groups are rendered in pages of 10, with an `IntersectionObserver` sentinel triggering the next page only when the user scrolls near it. On search, all remaining pages are flushed immediately so no results are missed.
+- **Virtual scrolling** (`virtual-scroll.js`): Activates automatically when group count ≥ 30. Only cards within the viewport (plus a 300px buffer) are actually in the DOM; height and top-position caches enable O(1) window updates on scroll. A `ResizeObserver` keeps height caches accurate when cards resize. Search mode disables virtualization to allow full CSS `display`-based filtering.
+
+Both systems are transparent to consumers — `dashboard.js` calls the same `renderDomainCard()` function regardless of which renderer is active.
 
 ---
 

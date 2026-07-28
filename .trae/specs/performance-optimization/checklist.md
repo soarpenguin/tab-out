@@ -1,0 +1,20 @@
+- [x] Checkpoint 1: Search input debounces 200ms before executing filter
+- [x] Checkpoint 2: Search result cache avoids redundant filtering for same query
+- [x] Checkpoint 3: filterTabs operates on domainGroups data layer, not DOM traversal
+- [x] Checkpoint 4: First render shows only first 10 domain groups (lazy loading)
+- [x] Checkpoint 5: Scrolling to bottom loads next page of domain groups
+- [x] Checkpoint 6: Intersection Observer properly detects sentinel element visibility
+- [x] Checkpoint 7: Virtual scrolling renders only visible cards + buffer (viewport windowing)
+- [x] Checkpoint 8: Scrollbar height maintained via placeholder div
+- [x] Checkpoint 9: Card height cache populated after first render
+- [x] Checkpoint 10: Height cache updated on card height changes (ResizeObserver)
+- [x] Checkpoint 11: Virtual scroll temporarily disabled during search mode
+- [x] Checkpoint 12: All search results visible when search is active
+- [x] Checkpoint 13: Virtual scroll resumes after clearing search
+- [x] Checkpoint 14: Drag-and-drop works correctly with virtual scroll
+- [x] Checkpoint 15: Tab preview hover works on virtualized chips
+- [x] Checkpoint 16: All chip actions (close, save, focus) work with virtual scroll
+- [x] Checkpoint 17: Re-renders (theme change, workspace switch) work correctly
+- [x] Checkpoint 18: All 4 themes render correctly with virtual scroll
+- [x] Checkpoint 19: Compact mode works with virtual scroll
+- [x] Checkpoint 20: No visual glitches, layout shifts, or spacing issues

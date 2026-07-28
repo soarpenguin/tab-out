@@ -127,13 +127,34 @@ async function renderStaticDashboard() {
 
   const workspaceTabCount = domainGroups.reduce((sum, g) => sum + g.tabs.length, 0);
 
+  clearGroupCardMap();
+  clearSearchCache();
+
   if (domainGroups.length > 0 && openTabsSection) {
     if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
-    openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${workspaceTabCount} tabs</button>`;
-    openTabsMissionsEl.innerHTML = domainGroups.map(g => renderDomainCard(g)).join('');
+    openTabsSectionCount.innerHTML = `${domainGroups.length} domain${domainGroups.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" data-total-tabs="${workspaceTabCount}" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${workspaceTabCount} tabs</button>`;
+
+    if (domainGroups.length > PAGE_SIZE) {
+      resetLazyRenderer();
+      initLazyRenderer(openTabsMissionsEl, domainGroups);
+    } else {
+      openTabsMissionsEl.innerHTML = domainGroups.map(g => renderDomainCard(g)).join('');
+    }
     openTabsSection.style.display = 'block';
+
+    if (virtualScrollEnabled()) {
+      resetVirtualScroll();
+    }
+
+    if (domainGroups.length >= VIRTUAL_THRESHOLD) {
+      setTimeout(() => {
+        initVirtualScroll(openTabsMissionsEl, domainGroups);
+      }, 50);
+    }
   } else if (openTabsSection) {
     openTabsSection.style.display = 'none';
+    resetLazyRenderer();
+    resetVirtualScroll();
   }
 
   const statTabs = document.getElementById('statTabs');

@@ -95,6 +95,10 @@ function applyTheme(theme) {
   if (theme === 'frosted-blue') {
     document.body.classList.add('theme-frosted-blue');
   }
+
+  if (typeof invalidateAllVirtualHeights === 'function') {
+    invalidateAllVirtualHeights();
+  }
 }
 
 function applySettings() {
@@ -119,6 +123,10 @@ function applySettings() {
     themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'warm-light';
   }
   applyTheme(themeToApply);
+
+  if (typeof invalidateAllVirtualHeights === 'function') {
+    invalidateAllVirtualHeights();
+  }
 }
 
 function openSettings() {

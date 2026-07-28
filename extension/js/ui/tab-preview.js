@@ -1,7 +1,9 @@
 const PREVIEW_CACHE = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
+const CAPTURE_MIN_INTERVAL = 500;
 let currentPreviewTabId = null;
 let previewTimeout = null;
+let lastCaptureTime = 0;
 
 function clearPreviewTimeout() {
   if (previewTimeout) {
@@ -59,9 +61,18 @@ async function captureTabPreview(tabId) {
       return null;
     }
 
+    if (!tab.active) {
+      return null;
+    }
+
+    const now = Date.now();
+    if (now - lastCaptureTime < CAPTURE_MIN_INTERVAL) {
+      return null;
+    }
+    lastCaptureTime = now;
+
     const screenshot = await chrome.tabs.captureVisibleTab(tab.windowId, {
-      format: 'png',
-      quality: 80
+      format: 'png'
     });
 
     if (screenshot) {
@@ -69,7 +80,7 @@ async function captureTabPreview(tabId) {
       return screenshot;
     }
   } catch (err) {
-    console.warn('[tab-out] Failed to capture tab preview:', err);
+    // Stale tab ID or transient error — expected, no need to warn
   }
 
   return null;
@@ -189,7 +200,6 @@ async function loadPreviewImage(overlay, tabId, url) {
       }
     }
   } catch (err) {
-    console.warn('[tab-out] Error loading preview image:', err);
     if (loading) loading.remove();
     const faviconUrl = getFaviconUrl(url);
     if (faviconUrl) {

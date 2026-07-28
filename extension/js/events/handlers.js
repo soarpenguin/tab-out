@@ -1,4 +1,5 @@
 document.addEventListener('click', async (e) => {
+  if (!(e.target instanceof Element)) return;
   const actionEl = e.target.closest('[data-action]');
   if (!actionEl) return;
 
@@ -60,6 +61,7 @@ document.addEventListener('click', async (e) => {
       chip.style.transform  = 'scale(0.8)';
       setTimeout(() => {
         chip.remove();
+        const domainId = card?.dataset.domainId;
         document.querySelectorAll('.mission-card').forEach(c => {
           const remaining = c.querySelectorAll('.page-chip[data-action="focus-tab"]').length;
           if (remaining === 0) {
@@ -75,6 +77,7 @@ document.addEventListener('click', async (e) => {
             }
           }
         });
+        if (domainId) invalidateVirtualHeightCacheForGroup(domainId);
       }, 200);
     }
 
@@ -111,6 +114,7 @@ document.addEventListener('click', async (e) => {
       chip.style.transform  = 'scale(0.8)';
       setTimeout(() => {
         chip.remove();
+        const domainId = card?.dataset.domainId;
         document.querySelectorAll('.mission-card').forEach(c => {
           const remaining = c.querySelectorAll('.page-chip[data-action="focus-tab"]').length;
           if (remaining === 0) {
@@ -126,6 +130,7 @@ document.addEventListener('click', async (e) => {
             }
           }
         });
+        if (domainId) invalidateVirtualHeightCacheForGroup(domainId);
       }, 200);
     }
 
@@ -200,6 +205,8 @@ document.addEventListener('click', async (e) => {
     const idx = domainGroups.indexOf(group);
     if (idx !== -1) domainGroups.splice(idx, 1);
 
+    invalidateVirtualHeightCacheForGroup(domainId);
+
     const groupLabel = group.domain === '__landing-pages__' ? 'Homepages' : (group.label || friendlyDomain(group.domain));
     showToast(`Closed ${urls.length} tab${urls.length !== 1 ? 's' : ''} from ${groupLabel}`);
 
@@ -240,6 +247,8 @@ document.addEventListener('click', async (e) => {
       });
       card.classList.remove('has-amber-bar');
       card.classList.add('has-neutral-bar');
+      const domainId = card.dataset.domainId;
+      if (domainId) invalidateVirtualHeightCacheForGroup(domainId);
     }
 
     const statTabs = document.getElementById('statTabs');
@@ -489,7 +498,7 @@ document.addEventListener('input', async (e) => {
 
 document.addEventListener('input', (e) => {
   if (e.target.id === 'searchInput') {
-    filterTabs(e.target.value);
+    debouncedFilterTabs(e.target.value);
   }
 });
 
@@ -502,6 +511,7 @@ document.addEventListener('keydown', (e) => {
     const input = document.getElementById('searchInput');
     if (input && document.activeElement === input) {
       input.value = '';
+      clearSearchCache();
       filterTabs('');
       input.blur();
     }
@@ -559,6 +569,7 @@ document.addEventListener('dragstart', (e) => {
   target.classList.add('dragging');
   document.getElementById('workspaceBar').classList.add('drop-active');
   markDragHintSeen();
+  pauseVirtualScroll();
 });
 
 document.addEventListener('dragend', (e) => {
@@ -567,6 +578,7 @@ document.addEventListener('dragend', (e) => {
   draggedDomain = null;
   document.querySelectorAll('.workspace-tab.drag-over').forEach(el => el.classList.remove('drag-over'));
   document.getElementById('workspaceBar').classList.remove('drop-active');
+  resumeVirtualScroll();
 });
 
 document.addEventListener('dragover', (e) => {
@@ -667,7 +679,8 @@ document.addEventListener('mouseout', (e) => {
   if (!(e.target instanceof Element)) return;
   const chip = e.target.closest('.page-chip.clickable[data-action="focus-tab"]');
   if (!chip) return;
-  const relatedChip = e.relatedTarget?.closest('.page-chip.clickable[data-action="focus-tab"]');
+  const relatedEl = e.relatedTarget;
+  const relatedChip = (relatedEl instanceof Element) ? relatedEl.closest('.page-chip.clickable[data-action="focus-tab"]') : null;
   if (relatedChip === chip) return;
   hideTabPreview();
 });
