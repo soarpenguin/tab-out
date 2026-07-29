@@ -5,7 +5,8 @@ let settings = {
   theme: 'warm-light',
   compactMode: false,
   autoGroupByDomain: true,
-  showWorkspaceBar: true
+  showWorkspaceBar: true,
+  showSmartSuggestions: true
 };
 
 async function loadSettings() {
@@ -193,7 +194,8 @@ async function clearAllData() {
     theme: 'warm-light',
     compactMode: false,
     autoGroupByDomain: true,
-    showWorkspaceBar: true
+    showWorkspaceBar: true,
+    showSmartSuggestions: true
   };
 
   renderSavedSessions();

@@ -48,9 +48,9 @@ function debouncedFilterTabs(query) {
   }
 
   _debounceTimer = setTimeout(() => {
-    if (query && isVirtualScrollEnabled()) {
+    if (query && virtualScrollEnabled()) {
       setVirtualSearchMode(true);
-    } else if (!query && isVirtualScrollEnabled()) {
+    } else if (!query && virtualScrollEnabled()) {
       setVirtualSearchMode(false);
     }
     if (query && !isLazyAllRendered()) {
@@ -133,6 +133,34 @@ function filterTabs(query) {
           if (match) overflowHasMatch = true;
         });
         overflowContainer.style.display = overflowHasMatch ? '' : 'none';
+      }
+    }
+  }
+
+  // Also filter smart suggestion cards
+  const suggestionCards = document.querySelectorAll('#smartSuggestionsList .suggestion-card');
+  if (suggestionCards.length > 0) {
+    let anySuggestionMatch = false;
+    suggestionCards.forEach(card => {
+      const tabId = parseInt(card.dataset.tabId);
+      const tab = openTabs.find(t => t.id === tabId);
+      if (!q) {
+        card.style.display = '';
+        return;
+      }
+      if (tab) {
+        const title = (tab.title || '').toLowerCase();
+        const url = (tab.url || '').toLowerCase();
+        const match = title.includes(q) || url.includes(q);
+        card.style.display = match ? '' : 'none';
+        if (match) anySuggestionMatch = true;
+      }
+    });
+    const section = document.getElementById('smartSuggestionsSection');
+    if (section) {
+      section.style.display = (!q || anySuggestionMatch) && suggestionCards.length > 0 ? 'block' : 'none';
+      if (!q) {
+        section.style.display = settings.showSmartSuggestions ? 'block' : 'none';
       }
     }
   }

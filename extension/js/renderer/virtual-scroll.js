@@ -1,6 +1,6 @@
 const VIRTUAL_BUFFER = 300;
 const VIRTUAL_THRESHOLD = 30;
-let virtualScrollEnabled = false;
+let _vsEnabled = false;
 let virtualScrollContainer = null;
 let virtualScrollPlaceholder = null;
 let virtualScrollGroupHeights = new Map();
@@ -38,9 +38,9 @@ function initVirtualScroll(containerEl, groups) {
 
   recalcVirtualScrollHeights();
 
-  virtualScrollEnabled = groups.length >= VIRTUAL_THRESHOLD;
+  _vsEnabled = groups.length >= VIRTUAL_THRESHOLD;
 
-  if (virtualScrollEnabled) {
+  if (_vsEnabled) {
     setupVirtualScroll();
     setupVirtualScrollResizeObserver();
   }
@@ -180,7 +180,7 @@ function setupVirtualScroll() {
  * on fully-rendered cards instead.
  */
 function updateVirtualScrollWindow() {
-  if (!virtualScrollEnabled || !virtualScrollContainer || virtualScrollIsSearching) return;
+  if (!_vsEnabled || !virtualScrollContainer || virtualScrollIsSearching) return;
 
   const scrollTop = virtualScrollContainer.scrollTop;
   const viewportHeight = virtualScrollContainer.clientHeight;
@@ -268,7 +268,7 @@ function resetVirtualScroll() {
   if (virtualScrollScrollHandler && virtualScrollContainer) {
     virtualScrollContainer.removeEventListener('scroll', virtualScrollScrollHandler);
   }
-  virtualScrollEnabled = false;
+  _vsEnabled = false;
   virtualScrollContainer = null;
   virtualScrollPlaceholder = null;
   virtualScrollGroupHeights.clear();
@@ -284,8 +284,8 @@ function resetVirtualScroll() {
   }
 }
 
-function isVirtualScrollEnabled() {
-  return virtualScrollEnabled;
+function virtualScrollEnabled() {
+  return _vsEnabled;
 }
 
 /**
@@ -298,7 +298,7 @@ function isVirtualScrollEnabled() {
  * group-card map so search can rebuild it from the now-complete DOM.
  */
 function pauseVirtualScroll() {
-  if (!virtualScrollEnabled || !virtualScrollContainer) return;
+  if (!_vsEnabled || !virtualScrollContainer) return;
 
   if (virtualScrollScrollHandler) {
     virtualScrollContainer.removeEventListener('scroll', virtualScrollScrollHandler);
@@ -342,7 +342,7 @@ function pauseVirtualScroll() {
  * movement that happened during the paused state.
  */
 function resumeVirtualScroll() {
-  if (!virtualScrollEnabled || !virtualScrollContainer) return;
+  if (!_vsEnabled || !virtualScrollContainer) return;
 
   virtualScrollPlaceholder.style.display = '';
   virtualScrollScrollHandler = () => {
@@ -357,7 +357,7 @@ function resumeVirtualScroll() {
 }
 
 function invalidateVirtualHeightCacheForGroup(groupId) {
-  if (!virtualScrollEnabled) return;
+  if (!_vsEnabled) return;
   const card = virtualScrollContainer.querySelector(`[data-domain-id="${groupId}"]`);
   if (card) {
     virtualScrollGroupHeights.set(groupId, card.offsetHeight);

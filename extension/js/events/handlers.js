@@ -291,6 +291,90 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  if (action === 'close-suggestion-tab') {
+    const tabId = parseInt(actionEl.dataset.tabId);
+    if (!tabId) return;
+
+    try {
+      await chrome.tabs.remove(tabId);
+    } catch {}
+    await fetchOpenTabs();
+    playCloseSound();
+
+    const card = actionEl.closest('.suggestion-card');
+    if (card) {
+      const rect = card.getBoundingClientRect();
+      shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(20px)';
+      setTimeout(() => {
+        card.remove();
+        const remainingCards = document.querySelectorAll('#smartSuggestionsList .suggestion-card');
+        if (remainingCards.length === 0) {
+          const section = document.getElementById('smartSuggestionsSection');
+          if (section) section.style.display = 'none';
+        } else {
+          const countEl = document.getElementById('smartSuggestionsCount');
+          if (countEl) {
+            countEl.innerHTML = `${remainingCards.length} suggestion${remainingCards.length !== 1 ? 's' : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-suggestions" style="font-size:11px;padding:3px 10px;">Close all ${remainingCards.length}</button>`;
+          }
+        }
+      }, 250);
+    }
+
+    const statTabs = document.getElementById('statTabs');
+    if (statTabs) statTabs.textContent = openTabs.length;
+
+    showToast('Tab closed');
+    return;
+  }
+
+  if (action === 'close-all-suggestions') {
+    const cards = document.querySelectorAll('#smartSuggestionsList .suggestion-card');
+    if (cards.length === 0) return;
+
+    const tabIds = Array.from(cards).map(c => parseInt(c.dataset.tabId)).filter(Boolean);
+    let closedCount = 0;
+    for (const id of tabIds) {
+      try {
+        await chrome.tabs.remove(id);
+        closedCount++;
+      } catch {}
+    }
+    await fetchOpenTabs();
+    playCloseSound();
+
+    cards.forEach((card, idx) => {
+      const rect = card.getBoundingClientRect();
+      shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      card.style.transition = 'opacity 0.25s, transform 0.25s';
+      setTimeout(() => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(20px)';
+      }, idx * 30);
+    });
+
+    setTimeout(() => {
+      const section = document.getElementById('smartSuggestionsSection');
+      if (section) section.style.display = 'none';
+    }, cards.length * 30 + 300);
+
+    const statTabs = document.getElementById('statTabs');
+    if (statTabs) statTabs.textContent = openTabs.length;
+
+    showToast(`Closed ${closedCount} tab${closedCount !== 1 ? 's' : ''}`);
+    return;
+  }
+
+  if (action === 'focus-suggestion-tab') {
+    const url = actionEl.dataset.tabUrl;
+    if (url) {
+      await focusTab(url);
+    }
+    return;
+  }
+
   if (action === 'open-quick-link') {
     let url = actionEl.dataset.linkUrl;
     if (!url) return;

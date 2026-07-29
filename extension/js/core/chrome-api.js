@@ -19,6 +19,9 @@ async function fetchOpenTabs() {
       title:        t.title,
       windowId:     t.windowId,
       active:       t.active,
+      audible:      t.audible,
+      pinned:       t.pinned,
+      discarded:    t.discarded,
       lastAccessed: t.lastAccessed || Date.now(),
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));

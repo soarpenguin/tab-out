@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="css/ui/settings.css">
   <link rel="stylesheet" href="css/ui/actions.css">
   <link rel="stylesheet" href="css/ui/tab-preview.css">
+  <link rel="stylesheet" href="css/components/smart-suggestions.css">
   <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
@@ -180,6 +181,16 @@
 
   </div><!-- end .dashboard-columns -->
 
+  <!-- SMART SUGGESTIONS SECTION -->
+  <div class="smart-suggestions-section" id="smartSuggestionsSection" style="display:none">
+    <div class="section-header">
+      <h2>Suggested to close</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="smartSuggestionsCount"></div>
+    </div>
+    <div class="smart-suggestions-list" id="smartSuggestionsList"></div>
+  </div>
+
   <!-- ================================================================
        FOOTER — merged bottom bar with stats, actions, and brand
        ================================================================ -->
@@ -322,6 +333,15 @@
           <div class="toggle-knob"></div>
         </div>
       </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="setting-label">Smart suggestions</div>
+          <div class="setting-desc">Show tabs that may be closed based on inactivity</div>
+        </div>
+        <div class="toggle on" data-setting="showSmartSuggestions">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
     </div>
 
     <div class="drawer-section">
@@ -423,6 +443,7 @@
 <script src="js/features/workspaces.js"></script>
 <script src="js/features/sessions.js"></script>
 <script src="js/features/settings.js"></script>
+<script src="js/features/smart-suggestions.js"></script>
 
 <!-- Event handlers -->
 <script src="js/events/handlers.js"></script>

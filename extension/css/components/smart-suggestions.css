@@ -1,0 +1,126 @@
+.smart-suggestions-section {
+  margin-top: 32px;
+  margin-bottom: 40px;
+}
+
+.smart-suggestions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggestion-card {
+  background: var(--card-bg);
+  border: 1px solid var(--warm-gray);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.25s ease;
+  cursor: pointer;
+}
+
+.suggestion-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent-amber);
+}
+
+.suggestion-card:hover {
+  box-shadow: 0 2px 12px var(--shadow);
+  transform: translateY(-1px);
+}
+
+.suggestion-favicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggestion-favicon img {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+.suggestion-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.suggestion-domain {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.suggestion-reason {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent-amber);
+  background: rgba(200, 113, 58, 0.1);
+  padding: 3px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.suggestion-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.suggestion-close:hover {
+  color: var(--accent-rose);
+  background: rgba(179, 90, 90, 0.08);
+}
+
+.suggestion-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 800px) {
+  .smart-suggestions-section {
+    margin-top: 24px;
+  }
+
+  .suggestion-card {
+    padding: 10px 12px;
+  }
+
+  .suggestion-reason {
+    display: none;
+  }
+}

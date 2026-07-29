@@ -47,8 +47,8 @@ function buildOverflowChips(hiddenTabs, urlCounts = {}) {
     try { domain = new URL(tab.url).hostname.replace(/^www\./, ''); } catch {}
     const faviconUrl = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : '';
     const ageInfo = getTabAgeInfo(tab.lastAccessed || Date.now());
-    const shouldShowAge = settings.showTabAge && (settings.warnOldTabs ? ageInfo.level !== 'fresh' : true);
-    const ageClass = shouldShowAge && ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
+    const shouldShowAge = settings.showTabAge;
+    const ageClass = settings.warnOldTabs && ageInfo.level !== 'fresh' ? ` tab-age-${ageInfo.level}` : '';
     const ageDisplay = shouldShowAge ? `<span class="tab-age${ageClass}">${ageInfo.text}</span>` : '';
     return `<div class="page-chip clickable${chipClass}" data-action="focus-tab" data-tab-url="${safeUrl}" data-tab-id="${tab.id}" title="${safeTitle}" draggable="true" data-drag-domain="${domain}">
       ${faviconUrl ? `<img class="chip-favicon" src="${faviconUrl}" alt="">` : ''}

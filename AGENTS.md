@@ -149,6 +149,7 @@ tab-out/
 | `js/features/workspaces.js` | Workspace management and filtering |
 | `js/features/sessions.js` | Session save/restore functionality |
 | `js/features/settings.js` | Settings panel and configuration |
+| `js/features/smart-suggestions.js` | Smart tab scoring and close recommendations |
 | `js/events/handlers.js` | Main event handlers for all clicks |
 | `js/events/toolbar-events.js` | Bottom toolbar event handlers |
 | `js/init.js` | Application initialization |
