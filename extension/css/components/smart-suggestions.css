@@ -4,9 +4,8 @@
 }
 
 .smart-suggestions-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  columns: 280px;
+  column-gap: 12px;
 }
 
 .suggestion-card {
@@ -21,6 +20,8 @@
   overflow: hidden;
   transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.25s ease;
   cursor: pointer;
+  break-inside: avoid;
+  margin-bottom: 8px;
 }
 
 .suggestion-card::before {

@@ -151,20 +151,9 @@ async function renderStaticDashboard() {
         openTabsMissionsEl.innerHTML = domainGroups.map(g => renderDomainCard(g)).join('');
       }
       openTabsSection.style.display = 'block';
-
-      if (virtualScrollEnabled()) {
-        resetVirtualScroll();
-      }
-
-      if (domainGroups.length >= VIRTUAL_THRESHOLD) {
-        setTimeout(() => {
-          initVirtualScroll(openTabsMissionsEl, domainGroups);
-        }, 50);
-      }
     } else if (openTabsSection) {
       openTabsSection.style.display = 'none';
       resetLazyRenderer();
-      resetVirtualScroll();
     }
 
     const statTabs = document.getElementById('statTabs');

@@ -1,5 +1,5 @@
 const VIRTUAL_BUFFER = 300;
-const VIRTUAL_THRESHOLD = 30;
+const VIRTUAL_THRESHOLD = 99999;
 let _vsEnabled = false;
 let virtualScrollContainer = null;
 let virtualScrollPlaceholder = null;
@@ -267,6 +267,18 @@ function setVirtualSearchMode(isSearching) {
 function resetVirtualScroll() {
   if (virtualScrollScrollHandler && virtualScrollContainer) {
     virtualScrollContainer.removeEventListener('scroll', virtualScrollScrollHandler);
+  }
+  if (virtualScrollContainer) {
+    virtualScrollContainer.style.position = '';
+    virtualScrollContainer.style.overflow = '';
+    const placeholder = virtualScrollContainer.querySelector('.virtual-scroll-placeholder');
+    if (placeholder) placeholder.remove();
+    virtualScrollContainer.querySelectorAll('.mission-card').forEach(card => {
+      card.style.position = '';
+      card.style.left = '';
+      card.style.right = '';
+      card.style.top = '';
+    });
   }
   _vsEnabled = false;
   virtualScrollContainer = null;
