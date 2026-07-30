@@ -46,19 +46,16 @@ function scheduleRefresh(delay = 300) {
   }, delay);
 }
 
-chrome.tabs.onCreated.addListener(() => scheduleRefresh(300));
-chrome.tabs.onRemoved.addListener(() => scheduleRefresh(300));
+chrome.tabs.onCreated.addListener(() => scheduleRefresh());
+chrome.tabs.onRemoved.addListener(() => scheduleRefresh());
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
   if (changeInfo.url || changeInfo.audible !== undefined) {
-    scheduleRefresh(500);
+    scheduleRefresh(300);
   }
 });
-chrome.tabs.onActivated.addListener(() => scheduleRefresh(300));
-chrome.tabs.onAttached.addListener(() => scheduleRefresh(300));
-chrome.tabs.onDetached.addListener(() => scheduleRefresh(300));
-chrome.windows.onCreated.addListener(() => scheduleRefresh(300));
-chrome.windows.onRemoved.addListener(() => scheduleRefresh(300));
+chrome.windows.onCreated.addListener(() => scheduleRefresh());
+chrome.windows.onRemoved.addListener(() => scheduleRefresh());
 
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) scheduleRefresh(300);
+  if (!document.hidden) scheduleRefresh();
 });
